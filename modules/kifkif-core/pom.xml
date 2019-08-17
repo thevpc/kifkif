@@ -1,0 +1,137 @@
+
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <groupId>net.vpc.app.kifkif</groupId>
+    <artifactId>kifkif-core</artifactId>
+    <version>0.1.4</version>
+    <packaging>jar</packaging>
+    
+    <name>net.vpc.app.kifkif.kifkif-core</name>
+    
+    <parent>
+        <groupId>net.vpc.app.kifkif</groupId>
+        <artifactId>kifkif-root</artifactId>
+        <version>1.0</version>
+        <relativePath>../kifkif-parent</relativePath>
+    </parent>
+
+    <properties>
+
+    </properties>
+
+    <dependencies>
+		<!-- ##############################
+			PRIVATE COMPILE DEPENDENCIES 
+		############################## -->
+        <!--<dependency>-->
+            <!--<groupId>net.vpc</groupId>-->
+            <!--<artifactId>jlauncher</artifactId>-->
+            <!--<version>${version.jlauncher}</version>-->
+        <!--</dependency>-->
+
+        <dependency>
+            <groupId>net.vpc.common</groupId>
+            <artifactId>vpc-common-swings</artifactId>
+            <version>${version.vpc-common-swings}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>net.vpc.common</groupId>
+            <artifactId>vpc-common-swings-prs</artifactId>
+            <version>${version.vpc-common-swing-prs}</version>
+        </dependency>
+
+
+		<!-- ##############################
+			THIRD PARTY COMPILE DEPENDENCIES 
+		############################## -->
+      
+      
+		<!-- ##############################
+			TEST DEPENDENCIES
+		############################## -->
+        <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+            <version>${version.junit}</version>
+            <scope>test</scope>
+        </dependency>
+        
+    </dependencies>
+    
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <version>3.7.0</version>
+                <configuration>
+                    <source>1.8</source>
+                    <target>1.8</target>
+                </configuration>
+            </plugin>
+            <!--
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-antrun-plugin</artifactId>
+                <version>1.6</version>
+                <executions>
+                    <execution>
+                        <id>compile</id>
+                        <phase>generate-sources</phase>
+                        <configuration>
+                            <target>
+                                <propertyfile file="src/main/resources/net/vpc/app/dbclient/api/dbclient-core.build"> 
+                                    <entry  key="DBClient.Core.Version" value="${project.version}"/> 
+                                    <entry  key="DBClient.Core.Date" type="date" value="now" pattern="yyyy-MM-dd"/> 
+                                    <entry  key="DBClient.Core.DateTime" type="date" value="now" pattern="yyyy-MM-dd HH:mm:ss"/> 
+                                </propertyfile>
+                            </target>
+                        </configuration>
+                        <goals>
+                            <goal>run</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-dependency-plugin</artifactId>
+                <version>3.0.2</version>
+                <executions>
+                    <execution>
+                        <id>copy-dependencies</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>copy-dependencies</goal>
+                        </goals>
+                        <configuration>
+                            <outputDirectory>${project.build.directory}/lib</outputDirectory>
+                            <overWriteReleases>true</overWriteReleases>
+                            <overWriteSnapshots>true</overWriteSnapshots>
+                            <overWriteIfNewer>true</overWriteIfNewer>
+                            <includeScope>runtime</includeScope>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-source-plugin</artifactId>
+                <version>3.0.1</version>
+                <executions>
+                    <execution>
+                        <id>attach-sources</id>
+                        <goals>
+                            <goal>jar</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
+</project>

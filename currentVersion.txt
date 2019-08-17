@@ -1,0 +1,2 @@
+#current version
+currentVersion=1.2

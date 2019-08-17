@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project type="java bundle">
+<settings name="Kifkif">
+<replacespace enable="false" string="_"/>
+<emptykeys enable="true"/>
+</settings>
+<files workdirectory="D:\xprojects\kifkif\src\org\vpc\kifkif\lang">
+<default filename="Kifkif.properties">
+<properties visible="true"/>
+</default>
+<file filename="Kifkif_ar.properties">
+<properties visible="true"/>
+</file>
+<file filename="Kifkif_fr.properties">
+<properties visible="true"/>
+</file>
+<file filename="Kifkif_it.properties">
+<properties visible="true"/>
+</file>
+</files>
+<scanner>
+<files enable="false" rootdir="./"/>
+</scanner>
+</project>
