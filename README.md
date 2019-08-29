@@ -23,10 +23,28 @@ It is designed so that it can be used in different ways:
 
 Java Runtime Environment(JRE) 1.5 or higher is required for running this tool.
 
+## Installation
+to run netbeans launcher you should have a valid **nuts** installation (>=0.5.7)  and a valid java 8 or later installation.
+see [nuts wiki](https://github.com/thevpc/nuts/wiki)
 
-## Credits
+then just type to install it:
 
-    Main Developer : Taha Ben Salah (taha.bensalah@gmail.com)
+```
+nuts install kifkif
+```
+
+## Launching the application
+To launch the tool  type :
+```
+nuts kifkif
+```
+
+## Updating netbeans-launcher
+
+```
+nuts update kifkif
+```
+
 
 ## Code Examples  
 (see test folder)
