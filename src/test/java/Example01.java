@@ -1,7 +1,7 @@
 
-import net.vpc.kifkif.*;
-import net.vpc.kifkif.export.TextExportSupport;
-import net.vpc.kifkif.export.ExportException;
+import net.thevpc.kifkif.*;
+import net.thevpc.kifkif.swing.export.TextExportSupport;
+import net.thevpc.kifkif.swing.export.ExportException;
 
 import java.io.IOException;
 import java.io.File;

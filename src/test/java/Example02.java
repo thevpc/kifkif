@@ -1,16 +1,16 @@
 
-import net.vpc.kifkif.*;
-import net.vpc.kifkif.content.FileByteContentComparator;
-import net.vpc.kifkif.export.ExportException;
-import net.vpc.kifkif.export.TextExportSupport;
-import net.vpc.kifkif.stamp.FileSizeStampFilter;
-import net.vpc.kifkif.stamp.FolderSizeStampFilter;
+import net.thevpc.kifkif.*;
+import net.thevpc.kifkif.content.FileByteContentComparator;
+import net.thevpc.kifkif.swing.export.ExportException;
+import net.thevpc.kifkif.swing.export.TextExportSupport;
+import net.thevpc.kifkif.stamp.FileSizeStampFilter;
+import net.thevpc.kifkif.stamp.FolderSizeStampFilter;
 
 import java.io.File;
 import java.io.IOException;
 import java.util.Iterator;
 import java.util.List;
-import net.vpc.kifkif.stamp.FileNameStampFilter;
+import net.thevpc.kifkif.stamp.FileNameStampFilter;
 
 /**
  * this example prents two different manners to define File filters

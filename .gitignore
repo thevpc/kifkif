@@ -1,2 +1,4 @@
 
 modules/kifkif-core/target/
+/target/
+/modules/kifkif-core.zip

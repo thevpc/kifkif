@@ -1,17 +1,17 @@
 
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>net.vpc.app.kifkif</groupId>
+    <groupId>net.thevpckifkif</groupId>
     <artifactId>kifkif-core</artifactId>
     <version>0.1.4</version>
     <packaging>jar</packaging>
     
-    <name>net.vpc.app.kifkif.kifkif-core</name>
+    <name>net.thevpc.kifkif.kifkif-core</name>
     
     <parent>
-        <groupId>net.vpc.app.kifkif</groupId>
+        <groupId>net.thevpc.kifkif</groupId>
         <artifactId>kifkif-root</artifactId>
         <version>1.0</version>
         <relativePath>../kifkif-parent</relativePath>
@@ -22,36 +22,41 @@
     </properties>
 
     <dependencies>
-		<!-- ##############################
-			PRIVATE COMPILE DEPENDENCIES 
-		############################## -->
+        <dependency>
+            <groupId>net.thevpc.common</groupId>
+            <artifactId>thevpc-common-monitor</artifactId>
+            <version>1.22.7</version><!--updated-->
+        </dependency>
+        <!-- ##############################
+                PRIVATE COMPILE DEPENDENCIES 
+        ############################## -->
         <!--<dependency>-->
-            <!--<groupId>net.vpc</groupId>-->
-            <!--<artifactId>jlauncher</artifactId>-->
-            <!--<version>${version.jlauncher}</version>-->
+        <!--<groupId>net.vpc</groupId>-->
+        <!--<artifactId>jlauncher</artifactId>-->
+        <!--<version>${version.jlauncher}</version>-->
         <!--</dependency>-->
 
-        <dependency>
-            <groupId>net.vpc.common</groupId>
-            <artifactId>vpc-common-swings</artifactId>
-            <version>${version.vpc-common-swings}</version>
+        <!--        <dependency>
+            <groupId>net.thevpc.common</groupId>
+            <artifactId>thevpc-common-swing</artifactId>
+            <version>${version.thevpc-common-swing}</version>
         </dependency>
 
         <dependency>
-            <groupId>net.vpc.common</groupId>
-            <artifactId>vpc-common-swings-prs</artifactId>
-            <version>${version.vpc-common-swing-prs}</version>
-        </dependency>
+            <groupId>net.thevpc.common</groupId>
+            <artifactId>thevpc-common-swing-prs</artifactId>
+            <version>${version.thevpc-common-swing-prs}</version>
+        </dependency>-->
 
 
-		<!-- ##############################
-			THIRD PARTY COMPILE DEPENDENCIES 
-		############################## -->
+        <!-- ##############################
+                THIRD PARTY COMPILE DEPENDENCIES 
+        ############################## -->
       
       
-		<!-- ##############################
-			TEST DEPENDENCIES
-		############################## -->
+        <!-- ##############################
+                TEST DEPENDENCIES
+        ############################## -->
         <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
