@@ -10,12 +10,12 @@ public class SearchStatistics implements Serializable {
 
     int sourceFilesCount = 0;
     int sourceFoldersCount = 0;
-    long startTime = 0;
-    long endTime = 0;
+    long startTimeMillis = 0;
+    long endTimeMillis = 0;
 
     public SearchStatistics(){
-        startTime = System.currentTimeMillis();
-        endTime = 0;
+        startTimeMillis = System.currentTimeMillis();
+        endTimeMillis = 0;
     }
 
     public int getSourceFilesCount() {
@@ -34,24 +34,24 @@ public class SearchStatistics implements Serializable {
         this.sourceFoldersCount = sourceFoldersCount;
     }
 
-    public long getStartTime() {
-        return startTime;
+    public long getStartTimeMillis() {
+        return startTimeMillis;
     }
 
-    public void setStartTime(long startTime) {
-        this.startTime = startTime;
+    public void setStartTimeMillis(long startTimeMillis) {
+        this.startTimeMillis = startTimeMillis;
     }
 
-    public long getStatsElapsedTime() {
-        return endTime-startTime;
+    public long getStatsElapsedTimeMillis() {
+        return endTimeMillis - startTimeMillis;
     }
 
-    public long getEndTime() {
-        return endTime;
+    public long getEndTimeMillis() {
+        return endTimeMillis;
     }
 
-    public void setEndTime(long endTime) {
-        this.endTime = endTime;
+    public void setEndTimeMillis(long endTimeMillis) {
+        this.endTimeMillis = endTimeMillis;
     }
 
     public int getDuplicateFileSelectionCount() {

@@ -1,52 +1,26 @@
-
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>net.thevpc.kifkif</groupId>
     <artifactId>kifkif-core</artifactId>
-    <version>0.1.4</version>
+    <version>1.3.4</version>
     <packaging>jar</packaging>
-    
     <name>net.thevpc.kifkif.kifkif-core</name>
-    
-    <parent>
-        <groupId>net.thevpc.kifkif</groupId>
-        <artifactId>kifkif-root</artifactId>
-        <version>1.0</version>
-        <relativePath>../kifkif-parent</relativePath>
-    </parent>
-
     <properties>
-
+        <version.jlauncher>1.3.08</version.jlauncher>
+        <version.thevpc-common-swing>2.3.9</version.thevpc-common-swing>
+        <version.thevpc-common-swing-prs>2.3.9</version.thevpc-common-swing-prs>
+        <version.kifkif-core>0.1.4</version.kifkif-core>
+        <version.junit>3.8.1</version.junit>
     </properties>
 
     <dependencies>
         <dependency>
-            <groupId>net.thevpc.common</groupId>
-            <artifactId>thevpc-common-monitor</artifactId>
-            <version>1.22.7</version><!--updated-->
+            <groupId>net.thevpc.nuts</groupId>
+            <artifactId>nuts</artifactId>
+            <version>0.8.4</version>
         </dependency>
-        <!-- ##############################
-                PRIVATE COMPILE DEPENDENCIES 
-        ############################## -->
-        <!--<dependency>-->
-        <!--<groupId>net.vpc</groupId>-->
-        <!--<artifactId>jlauncher</artifactId>-->
-        <!--<version>${version.jlauncher}</version>-->
-        <!--</dependency>-->
-
-        <!--        <dependency>
-            <groupId>net.thevpc.common</groupId>
-            <artifactId>thevpc-common-swing</artifactId>
-            <version>${version.thevpc-common-swing}</version>
-        </dependency>
-
-        <dependency>
-            <groupId>net.thevpc.common</groupId>
-            <artifactId>thevpc-common-swing-prs</artifactId>
-            <version>${version.thevpc-common-swing-prs}</version>
-        </dependency>-->
 
 
         <!-- ##############################

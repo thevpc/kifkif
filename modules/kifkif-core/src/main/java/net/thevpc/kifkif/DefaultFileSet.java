@@ -2,14 +2,10 @@ package net.thevpc.kifkif;
 
 import java.io.File;
 import java.io.FileFilter;
-import java.lang.reflect.Field;
-import java.lang.reflect.Modifier;
 import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.Stack;
 
-import org.w3c.dom.Document;
-import org.w3c.dom.Element;
+import net.thevpc.kifkif.util.FixedEstimateIterator;
+import net.thevpc.kifkif.util.FolderVisitorEstimateIterator;
 
 /**
  * @author vpc
@@ -36,7 +32,7 @@ public class DefaultFileSet implements FileSet{
         }
     }
 
-    public Iterator<File> iterate(final KifKif kifkif) {
+    public EstimateIterator<File> iterate(final KifKif kifkif) {
         final FileFilter compoundFilter=new FileFilter() {
             public boolean accept(File pathname) {
                 FileFilter globalFileFilter = kifkif.getGlobalFileFilter();
@@ -50,36 +46,9 @@ public class DefaultFileSet implements FileSet{
         if (root.isFile()) {
             ArrayList<File> a = new ArrayList<File>();
             a.add(root);
-            return a.iterator();
+            return new FixedEstimateIterator<File>(a);
         } else {
-            return new Iterator<File>() {
-                Stack<File> s = new Stack<File>();
-
-                {
-                    s.push(root);
-                }
-
-                public boolean hasNext() {
-                    return !s.isEmpty();
-                }
-
-                public File next() {
-                    File f = s.pop();
-                    if (f.isDirectory()) {
-                        File[] fs = f.listFiles(compoundFilter);
-                        if (fs != null) {
-                            for (File file : fs) {
-                                s.push(file);
-                            }
-                        }
-                    }
-                    return f;
-                }
-
-                public void remove() {
-                    //not implemented
-                }
-            };
+            return new FolderVisitorEstimateIterator(this, compoundFilter);
         }
     }
 
@@ -125,7 +94,7 @@ public class DefaultFileSet implements FileSet{
         if (obj == null) {
             return false;
         }
-        if (toString().equals(obj) && obj instanceof DefaultFileSet) {
+        if (toString().equals(obj.toString()) && obj instanceof DefaultFileSet) {
             DefaultFileSet f = (DefaultFileSet) obj;
             return root.equals(f.root) && (this.fileFilter == f.fileFilter || (this.fileFilter != null && this.fileFilter.equals(f.fileFilter)));
         }
@@ -143,4 +112,5 @@ public class DefaultFileSet implements FileSet{
     public void setRoot(File root) {
         this.root = root;
     }
+
 }

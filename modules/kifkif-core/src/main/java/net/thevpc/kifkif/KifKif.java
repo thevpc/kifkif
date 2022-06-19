@@ -1,18 +1,15 @@
 package net.thevpc.kifkif;
 
-import java.io.File;
-import java.io.FileFilter;
-import java.io.IOException;
-import java.io.Serializable;
-import java.util.ArrayList;
-import java.util.Hashtable;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import net.thevpc.common.mon.ProgressMonitor;
-import net.thevpc.common.mon.ProgressMonitors;
+import java.io.*;
+import java.util.*;
 
 import net.thevpc.kifkif.stamp.DefaultFilestamp;
+import net.thevpc.nuts.NutsMessage;
+import net.thevpc.nuts.NutsSession;
+import net.thevpc.nuts.util.NutsChronometer;
+import net.thevpc.nuts.util.NutsEnumSet;
+import net.thevpc.nuts.util.NutsProgressMonitor;
+import net.thevpc.nuts.util.NutsProgressMonitors;
 
 /**
  * Kikif Engine
@@ -27,10 +24,23 @@ import net.thevpc.kifkif.stamp.DefaultFilestamp;
  */
 public class KifKif implements Serializable, Cloneable {
 
-    private FilestampFilterList filestampFilterList;
+    private static final int FILE_SET = 0;
+    private static final int FILE_FILTER_NAME = 1;
+    private static final int FILE_FILTER_INDEX = 2;
+    private static final int FOLDER_FILTER_NAME = 3;
+    private static final int FOLDER_FILTER_INDEX = 4;
+    private static final int INIT_FILES_COUNT = 5;
+    private static final int INIT_FOLDERS_COUNT = 6;
+    private static final int FILES_COUNT = 7;
+    private static final int FOLDERS_COUNT = 8;
+    private static final int DUP_FILES_COUNT = 9;
+    private static final int DUP_FOLDERS_COUNT = 10;
+    private static final int INDEX = 11;
+
+    private FileStampFilterList fileStampFilterList;
     private FileContentComparator fileContentComparator;
 
-    private FilestampFilterList folderstampFilterList;
+    private FileStampFilterList folderStampFilterList;
     private FileContentComparator folderContentComparator;
     private FileFilter globalFileFilter;
 
@@ -38,10 +48,7 @@ public class KifKif implements Serializable, Cloneable {
     private List<FileSet> includedFileSet = new ArrayList<FileSet>();
 
 
-    private int diffFileMode = FileDiffFactory.UNKNOWN;
-    private int diffFolderMode = FileDiffFactory.UNKNOWN;
-
-
+    private NutsEnumSet<FileMode> diffFileMode = NutsEnumSet.noneOf(FileMode.class);
     private boolean caseInsensitiveNames = true;
     private boolean showFolderDuplicates = true;
     private boolean showFileDuplicates = true;
@@ -53,54 +60,102 @@ public class KifKif implements Serializable, Cloneable {
     private transient Hashtable<File, Filestamp> tempFolderToStampMap = new Hashtable<File, Filestamp>();
     private transient SearchStatistics tempStatistics = new SearchStatistics();
 
+    private SearchData searchData;
+    private NutsSession session;
+    private NutsProgressMonitors mons;
+
     /**
-     * Simple Sonstructor
+     * Simple Constructor
      * No initialization done.
      */
-    public KifKif() {
-
+    public KifKif(NutsSession session) {
+        this.session = session;
+        this.mons = NutsProgressMonitors.of(session);
     }
 
     /**
-     * simple way for cofiguring search options
+     * simple way for configuring search options
      *
-     * @param fileMode   is one of the constants in FileDiffFactory
-     * @param folderMode is one of the constants in FileDiffFactory
+     * @param fileMode is one of the constants in FileDiffFactory
      */
-    public KifKif(int fileMode, int folderMode) {
-        setDiffFileMode(fileMode);
-        setDiffFolderMode(folderMode);
+    public KifKif(FileMode[] fileMode, NutsSession session) {
+        this.session = session;
+        setFileMode(fileMode);
     }
 
     /**
-     * @param filestampFilterList     filstamp list for files filtering
+     * @param fileStampFilterList     filstamp list for files filtering
      * @param fileContentComparator   file content comparator
-     * @param folderstampFilterList   filstamp list for folders filtering
+     * @param folderStampFilterList   filstamp list for folders filtering
      * @param folderContentComparator folder conent comparator
      */
-    public KifKif(FilestampFilterList filestampFilterList, FileContentComparator fileContentComparator, FilestampFilterList folderstampFilterList, FileContentComparator folderContentComparator) {
-        this.filestampFilterList = filestampFilterList;
+    public KifKif(FileStampFilterList fileStampFilterList, FileContentComparator fileContentComparator, FileStampFilterList folderStampFilterList, FileContentComparator folderContentComparator) {
+        this.fileStampFilterList = fileStampFilterList;
         this.fileContentComparator = fileContentComparator;
-        this.folderstampFilterList = folderstampFilterList;
+        this.folderStampFilterList = folderStampFilterList;
         this.folderContentComparator = folderContentComparator;
     }
 
     /**
-     * add some Folder (or even a file) to the list of files to chek.
+     * add some Folder (or even a file) to the list of files to check.
      * When adding a Folder, all subfolders and sub files are added (recursive)
      *
-     * @param fileSet
+     * @param fileSet fileSet
      */
     public void addIncludedFileSet(FileSet fileSet) {
+        addIncludedFileSet(fileSet, -1);
+    }
+
+    public void addExcludedFiles(File[] fileSets) {
+        final ArrayList<File> excludedFolders = ((DefaultFileFilter) getGlobalFileFilter()).getExcludedFolders();
+        excludedFolders.addAll(Arrays.asList(fileSets));
+    }
+
+    public void addIncludedFileSets(FileSet[] fileSets) {
+        addIncludedFileSets(fileSets, -1);
+    }
+
+    /**
+     * add some Folder (or even a file) to the list of files to check.
+     * When adding a Folder, all subfolders and sub files are added (recursive)
+     *
+     * @param fileSet fileSet
+     * @param index   index
+     */
+    public void addIncludedFileSet(FileSet fileSet, int index) {
         if (fileSet != null && !includedFileSet.contains(fileSet)) {
-            includedFileSet.add(fileSet);
+            if (index >= 0 && index < includedFileSet.size()) {
+                includedFileSet.add(index, fileSet);
+            } else {
+                includedFileSet.add(fileSet);
+            }
+        }
+    }
+
+    /**
+     * add some Folder (or even a file) to the list of files to check.
+     * When adding a Folder, all subfolders and sub files are added (recursive)
+     *
+     * @param fileSets fileSets
+     * @param index    index
+     */
+    public void addIncludedFileSets(FileSet[] fileSets, int index) {
+        if (fileSets != null) {
+            fileSets = Arrays.stream(fileSets).filter(x -> x != null && !includedFileSet.contains(x)).toArray(FileSet[]::new);
+            if (fileSets.length > 0) {
+                if (index >= 0 && index < includedFileSet.size()) {
+                    includedFileSet.addAll(index, Arrays.asList(fileSets));
+                } else {
+                    includedFileSet.addAll(Arrays.asList(fileSets));
+                }
+            }
         }
     }
 
     /**
      * remove already selected file
      *
-     * @param index
+     * @param index index
      */
     public void removeIncludedFileSet(int index) {
         includedFileSet.remove(index);
@@ -144,7 +199,6 @@ public class KifKif implements Serializable, Cloneable {
 
     /**
      * returns all selected files
-     *
      */
     public void clearIncludedFileSets() {
         includedFileSet.clear();
@@ -166,7 +220,7 @@ public class KifKif implements Serializable, Cloneable {
             }
 //            System.out.println("register "+file);
             tempStatistics.sourceFilesCount++;
-            Filestamp filestamp = filestampFilterList.getNextFilterSig(file, null, 0, this);
+            Filestamp filestamp = fileStampFilterList.getNextFilterSig(file, null, 0, this);
             DuplicateList duplicateList = tempFileDuplicatesMap.get(filestamp);
             if (duplicateList == null) {
                 duplicateList = new DuplicateList(filestamp);
@@ -180,8 +234,8 @@ public class KifKif implements Serializable, Cloneable {
             }
 //            System.out.println("register "+file);
             tempStatistics.sourceFoldersCount++;
-            if (folderstampFilterList != null) {
-                Filestamp folderStamp = folderstampFilterList.getNextFilterSig(file, null, 0, this);
+            if (folderStampFilterList != null) {
+                Filestamp folderStamp = folderStampFilterList.getNextFilterSig(file, null, 0, this);
                 DuplicateList duplicateList = tempFolderDuplicatesMap.get(folderStamp);
                 if (duplicateList == null) {
                     duplicateList = new DuplicateList(folderStamp);
@@ -225,105 +279,106 @@ public class KifKif implements Serializable, Cloneable {
     /**
      * remove all duplicate lists that does not contain more than a single file
      */
-    private void removeSingletons() {
-        for (Iterator<DuplicateList> i = tempFileDuplicatesMap.values().iterator(); i.hasNext();) {
-            DuplicateList duplicateList = i.next();
-            int c = duplicateList.getFileCount();
-            if (c == 1) {
-                File f = duplicateList.getFile(0);
-//                log("removeSingletonFile(" + f + ")", true);
-                i.remove();
-                unregisterFolder(f.getParentFile());
-            } else if (c == 0) {
-                System.err.println("problem removeSingletons<tempFileDuplicatesMap> : " + duplicateList.getFilestamp());
-            }
-        }
-        int count = -1;
-        while (true) {
-            ArrayList<File> toRemove = new ArrayList<File>();
-            for (DuplicateList duplicateList : tempFolderDuplicatesMap.values()) {
+    private void removeSingletons(NutsProgressMonitor progressMonitor) {
+        chrono("removeSingletons", () -> {
+            NutsProgressMonitor[] split = progressMonitor.split(1, 1);
+            NutsProgressMonitor s1 = split[0].incremental(tempFileDuplicatesMap.size());
+            for (Iterator<DuplicateList> i = tempFileDuplicatesMap.values().iterator(); i.hasNext(); ) {
+                DuplicateList duplicateList = i.next();
                 int c = duplicateList.getFileCount();
                 if (c == 1) {
                     File f = duplicateList.getFile(0);
-                    toRemove.add(f);
+//                log("removeSingletonFile(" + f + ")", true);
+                    i.remove();
+                    unregisterFolder(f.getParentFile());
+                } else if (c == 0) {
+                    System.err.println("problem removeSingletons<tempFileDuplicatesMap> : " + duplicateList.getFilestamp());
+                }
+                s1.inc();
+            }
+            s1.complete();
+
+            NutsProgressMonitor s2 = split[1].incremental(tempFolderDuplicatesMap.size());
+            int count = -1;
+            while (true) {
+                s2.setProgress(0);
+                ArrayList<File> toRemove = new ArrayList<File>();
+                for (DuplicateList duplicateList : tempFolderDuplicatesMap.values()) {
+                    int c = duplicateList.getFileCount();
+                    if (c == 1) {
+                        File f = duplicateList.getFile(0);
+                        toRemove.add(f);
+                    }
+                    s2.inc();
+                }
+                int newCount = toRemove.size();
+                if (newCount > 0 && newCount != count) {
+                    count = newCount;
+                    for (File file : toRemove) {
+                        unregisterFolder(file);
+                    }
+                } else if (newCount == count) {
+                    System.out.println("Problem");
+                    break;
+                } else {
+                    break;
                 }
             }
-            int newCount = toRemove.size();
-            if (newCount > 0 && newCount != count) {
-                count = newCount;
-                for (File file : toRemove) {
-                    unregisterFolder(file);
-                }
-            } else if (newCount == count) {
-                System.out.println("Problem");
-                break;
-            } else {
-                break;
-            }
-        }
+            s2.complete();
+            progressMonitor.complete();
+        });
     }
+
 
     /**
      * when looking for file duplicates, ignore file duplicates
      * if they are already included in some duplcate folders
      *
-     * @throws java.io.IOException
      */
-    private void removeExpandedFiles() throws IOException {
-
-        for (Iterator<DuplicateList> i = tempFolderDuplicatesMap.values().iterator(); i.hasNext();) {
-            DuplicateList dsimilitude = i.next();
-            for (Iterator<File> j = dsimilitude.getFiles().iterator(); j.hasNext();) {
+    private void removeExpandedFiles(NutsProgressMonitor progressMonitor) {
+        FileParentLookup fl = new FileParentLookup(tempFolderToStampMap.keySet());
+        NutsProgressMonitor[] split = progressMonitor.split(5, 10);
+        NutsProgressMonitor s1 = split[0].incremental(tempFolderDuplicatesMap.size());
+        for (Iterator<DuplicateList> i = tempFolderDuplicatesMap.values().iterator(); i.hasNext(); ) {
+            DuplicateList folderDuplicates = i.next();
+            for (Iterator<File> j = folderDuplicates.getFiles().iterator(); j.hasNext(); ) {
                 File folder = j.next();
-                boolean remove = false;
-                for (File parentFolder : tempFolderToStampMap.keySet()) {
-                    if (
-                            folder.getCanonicalPath().startsWith(parentFolder.getCanonicalPath() + "/")
-                                    ||
-                                    folder.getCanonicalPath().startsWith(parentFolder.getCanonicalPath() + "\\")
-                            ) {
-                        remove = true;
-                        break;
-                    }
-                }
-                if (remove) {
+                if (fl.containsParentOf(folder)) {
                     tempFolderToStampMap.remove(folder);
                     j.remove();
                 }
-
             }
-            if (dsimilitude.getFileCount() == 0) {
+            if (folderDuplicates.getFileCount() == 0) {
                 i.remove();
             }
+            s1.inc();
         }
-        for (DuplicateList folderDuplicates : tempFolderDuplicatesMap.values()) {
-            for (File folder : folderDuplicates.getFiles()) {
-                for (Iterator<DuplicateList> s = tempFileDuplicatesMap.values().iterator(); s.hasNext();) {
-                    DuplicateList fileDuplicates = s.next();
-//                    boolean isIncludedInCurrentFolder = true;
-                    for (Iterator<File> k = fileDuplicates.getFiles().iterator(); k.hasNext();) {
-                        File file = k.next();
-                        if (
-                                file.getCanonicalPath().startsWith(folder.getCanonicalPath() + "/")
-                                        ||
-                                        file.getCanonicalPath().startsWith(folder.getCanonicalPath() + "\\")
-                                ) {
-                            k.remove();
-                            tempFileToStampMap.remove(file);
-//                            isIncludedInCurrentFolder = true;
-                        }
-                    }
-                    if (fileDuplicates.getFileCount() == 0) {
-                        s.remove();
+        s1.complete();
+
+        NutsProgressMonitor s2 = split[1].incremental(tempFolderDuplicatesMap.size() * tempFileDuplicatesMap.size());
+        for (Iterator<DuplicateList> i = tempFolderDuplicatesMap.values().iterator(); i.hasNext(); ) {
+            DuplicateList folderDuplicates = i.next();
+            fl = new FileParentLookup(folderDuplicates.getFiles());
+            for (Iterator<DuplicateList> s = tempFileDuplicatesMap.values().iterator(); s.hasNext(); ) {
+                DuplicateList fileDuplicates = s.next();
+                for (Iterator<File> k = fileDuplicates.getFiles().iterator(); k.hasNext(); ) {
+                    File file = k.next();
+                    if (fl.containsParentOf(file)) {
+                        k.remove();
+                        tempFileToStampMap.remove(file);
                     }
                 }
+                if (fileDuplicates.getFileCount() == 0) {
+                    s.remove();
+                }
+                s2.inc();
             }
         }
-
+        s2.complete();
     }
 
     /**
-     * searchs for duplicates in the selected files according to the specified filters and compaators
+     * searches for duplicates in the selected files according to the specified filters and compaators
      *
      * @return list of duplicates
      */
@@ -337,227 +392,77 @@ public class KifKif implements Serializable, Cloneable {
      * @param taskMonitor : the progress monitor
      * @return list of duplicates
      */
-    public SearchData findDuplicates(ProgressMonitor taskMonitor) {
-        if (taskMonitor == null) {
-            taskMonitor = ProgressMonitors.none();
-        }
+    public SearchData findDuplicates(NutsProgressMonitor taskMonitor) {
+        taskMonitor = NutsProgressMonitors.of(session).of(taskMonitor);
         tempFileDuplicatesMap = new Hashtable<Filestamp, DuplicateList>();
         tempFileToStampMap = new Hashtable<File, Filestamp>();
         tempFolderDuplicatesMap = new Hashtable<Filestamp, DuplicateList>();
         tempFolderToStampMap = new Hashtable<File, Filestamp>();
         tempStatistics = new SearchStatistics();
 
-        final int FILE_SET = 0;
-        final int FILE_FILTER_NAME = 1;
-        final int FILE_FILTER_INDEX = 2;
-        final int FOLDER_FILTER_NAME = 3;
-        final int FOLDER_FILTER_INDEX = 4;
-        final int INIT_FILES_COUNT = 5;
-        final int INIT_FOLDERS_COUNT = 6;
-        final int FILES_COUNT = 7;
-        final int FOLDERS_COUNT = 8;
-        final int DUP_FILES_COUNT = 9;
-        final int DUP_FOLDERS_COUNT = 10;
-        final int INDEX = 11;
         final Object[] PROGRESS_PARAMS = new Object[15];
-        try {
-            taskMonitor.start();
-            final int maxProgress = includedFileSet.size()
-                    + (filestampFilterList == null ? 0 : filestampFilterList.getMaxLevels() == 0 ? 0 : (filestampFilterList.getMaxLevels() - 1))
-                    + (folderstampFilterList == null ? 0 : folderstampFilterList.getMaxLevels() == 0 ? 0 : (folderstampFilterList.getMaxLevels() - 1))
-                    + (fileContentComparator == null ? 0 : 1)
-                    + (folderContentComparator == null ? 0 : 1);
-            taskMonitor=taskMonitor.incremental(maxProgress);
-            for (FileSet fileSet : includedFileSet) {
-                PROGRESS_PARAMS[FILE_SET] = fileSet;
-                PROGRESS_PARAMS[FILE_FILTER_NAME] = (filestampFilterList == null ? "" : String.valueOf(filestampFilterList.getFilestampFilter(0)));
-                PROGRESS_PARAMS[FILE_FILTER_INDEX] = 0;
-                PROGRESS_PARAMS[FOLDER_FILTER_NAME] = (folderstampFilterList == null ? "" : String.valueOf(folderstampFilterList.getFilestampFilter(0)));
-                PROGRESS_PARAMS[FOLDER_FILTER_INDEX] = 0;
+        taskMonitor.reset();
+        taskMonitor.start();
+        NutsProgressMonitor[] mons = taskMonitor.split(1, 3, 6, 3, 3, 1);
+        processInit(PROGRESS_PARAMS, mons[0]);
+        processFileTimestamps(PROGRESS_PARAMS, mons[1]);
+        processFileContents(PROGRESS_PARAMS, mons[2]);
+        processFolderTimestamps(PROGRESS_PARAMS, mons[3]);
+        processFolderContents(PROGRESS_PARAMS, mons[4]);
+        processFinalize(PROGRESS_PARAMS, mons[5]);
+        taskMonitor.complete();
+        return searchData;
+    }
 
-                PROGRESS_PARAMS[INIT_FILES_COUNT] = tempStatistics.sourceFilesCount;
-                PROGRESS_PARAMS[INIT_FOLDERS_COUNT] = tempStatistics.sourceFoldersCount;
-                taskMonitor.inc();
-//                System.out.println(">> init.index "+taskMonitor.getIndex());
-                for (Iterator<File> i = fileSet.iterate(this); i.hasNext();) {
-                    File file = i.next();
-                    PROGRESS_PARAMS[INIT_FILES_COUNT] = tempStatistics.sourceFilesCount;
-                    PROGRESS_PARAMS[INIT_FOLDERS_COUNT] = tempStatistics.sourceFoldersCount;
-                    taskMonitor.inc("InitItem", PROGRESS_PARAMS);
-                    registerFile(file);
-                }
-            }
-            if (tempStatistics.sourceFilesCount == 0 && tempStatistics.sourceFoldersCount == 0) {
-                throw new IllegalArgumentException("Not Valid File set found");
-            }
-            int max = filestampFilterList.getMaxLevels();
-            if (max < 0) {
-                throw new IllegalArgumentException("Not Valid File stamp found");
-            }
-            removeSingletons();
-//            fileToIdTable = new Hashtable<File, Filestamp>();
-//            folderToIdTable = new Hashtable<File, Filestamp>();
-            for (int d = 1; d < max; d++) {
-                Hashtable<Filestamp, DuplicateList> newHashtable = new Hashtable<Filestamp, DuplicateList>();
-                PROGRESS_PARAMS[FILE_FILTER_INDEX] = d;
-                PROGRESS_PARAMS[FILE_FILTER_NAME] = filestampFilterList.getFilestampFilter(d).toString();
-                PROGRESS_PARAMS[FILES_COUNT] = tempFileToStampMap.size();
-                PROGRESS_PARAMS[FOLDERS_COUNT] = tempFolderToStampMap.size();
-                PROGRESS_PARAMS[DUP_FILES_COUNT] = tempFileDuplicatesMap.size();
-                PROGRESS_PARAMS[DUP_FOLDERS_COUNT] = tempFolderDuplicatesMap.size();
-                
-                ProgressMonitor it = taskMonitor.stepInto("Filestamp", PROGRESS_PARAMS).incremental(tempFileDuplicatesMap.size());
-                int index = 0;
-                for (DuplicateList duplicateList : tempFileDuplicatesMap.values()) {
-                    PROGRESS_PARAMS[FILES_COUNT] = tempFileToStampMap.size();
-                    PROGRESS_PARAMS[FOLDERS_COUNT] = tempFolderToStampMap.size();
-                    PROGRESS_PARAMS[DUP_FILES_COUNT] = tempFileDuplicatesMap.size();
-                    PROGRESS_PARAMS[DUP_FOLDERS_COUNT] = tempFolderDuplicatesMap.size();
-                    PROGRESS_PARAMS[INDEX] = ++index;
-                    it.inc("FilestampItem", PROGRESS_PARAMS);
-                    for (File file : duplicateList.getFiles()) {
-                        Filestamp filestamp = filestampFilterList.getNextFilterSig(file, duplicateList.getFilestamp(), d, this);
-                        DuplicateList newDuplicateList = newHashtable.get(filestamp);
-                        if (newDuplicateList == null) {
-                            newDuplicateList = new DuplicateList(filestamp);
-                            newHashtable.put(filestamp, newDuplicateList);
-                        }
-                        tempFileToStampMap.put(file, filestamp);
-                        newDuplicateList.addFile(file);
-                    }
-                }
-                tempFileDuplicatesMap = newHashtable;
-                removeSingletons();
-                //it.setEnd();
-//                System.out.println(">> fs.index "+taskMonitor.getIndex());
-            }
-            if (fileContentComparator != null) {
-                ArrayList<DuplicateList> allNewSimiltudes = new ArrayList<DuplicateList>();
-                PROGRESS_PARAMS[FILES_COUNT] = tempFileToStampMap.size();
-                PROGRESS_PARAMS[FOLDERS_COUNT] = tempFolderToStampMap.size();
-                PROGRESS_PARAMS[DUP_FILES_COUNT] = tempFileDuplicatesMap.size();
-                PROGRESS_PARAMS[DUP_FOLDERS_COUNT] = tempFolderDuplicatesMap.size();
-                final ProgressMonitor next = taskMonitor.stepInto( "FileContent", PROGRESS_PARAMS).incremental(tempFileDuplicatesMap.size());
-                int index = 0;
-                for (Iterator<DuplicateList> it = tempFileDuplicatesMap.values().iterator(); it.hasNext();) {
-                    PROGRESS_PARAMS[FILES_COUNT] = tempFileToStampMap.size();
-                    PROGRESS_PARAMS[FOLDERS_COUNT] = tempFolderToStampMap.size();
-                    PROGRESS_PARAMS[DUP_FILES_COUNT] = tempFileDuplicatesMap.size();
-                    PROGRESS_PARAMS[DUP_FOLDERS_COUNT] = tempFolderDuplicatesMap.size();
-                    PROGRESS_PARAMS[INDEX] = ++index;
-                    next.inc("FileContentItem", PROGRESS_PARAMS);
-                    DuplicateList duplicateList = it.next();
-//                    System.out.println(">>>>> "+duplicateList);
-                    File[] files = duplicateList.getFiles().toArray(new File[duplicateList.getFileCount()]);
-                    ArrayList<File> filesCopies = new ArrayList<File>();
-                    Hashtable<File, ArrayList<File>> filesLeaders = new Hashtable<File, ArrayList<File>>();
+    private void chrono(String name, Runnable r) {
+        session.out().printlnf("start %s", name);
+        NutsChronometer c = NutsChronometer.startNow();
+        r.run();
+        c.stop();
+        session.out().printlnf("%s %s", name, c);
+    }
 
-                    //Hashtable<File, ArrayList<File>> fileHash = new Hashtable<File, ArrayList<File>>();
-                    for (File file : files) {
-                        boolean found = false;
-                        for (Map.Entry<File, ArrayList<File>> entry : filesLeaders.entrySet()) {
-                            File leader = entry.getKey();
-                            if (
-                                    !filesCopies.contains(file)
-                                            && fileContentComparator.compareFileContent(this, file, leader)
-                                    ) {
-                                ArrayList<File> leaderTwins = entry.getValue();
-                                leaderTwins.add(file);
-                                filesCopies.add(file);
-//                                System.out.println(">twin "+files[i]);
-                                found = true;
-                            }
-                        }
-                        if (!found) {
-                            ArrayList<File> leaderTwins = new ArrayList<File>();
-                            leaderTwins.add(file);
-                            filesLeaders.put(file, leaderTwins);
-//                            System.out.println(">new "+files[i]);
-                        } else {
-//                            System.out.println(">already "+files[i]);
-                        }
-                    }
-                    //noinspection UnusedAssignment
-                    filesCopies = null;
-                    // HashSet to remove Duplicates
-                    if (filesLeaders.size() > 1) {
-//                        System.out.println(">remove "+duplicateList);
-                        it.remove();
-                        int x = 1;
-                        for (Map.Entry<File, ArrayList<File>> entry : filesLeaders.entrySet()) {
-                            DuplicateList newDuplicateList = new DuplicateList(duplicateList.getFilestamp().combine(new DefaultFilestamp("<" + (x + 1) + ">")));
-                            newDuplicateList.addAllFiles(entry.getValue());
-                            allNewSimiltudes.add(newDuplicateList);
-                        }
-                    }
-                }
-                for (DuplicateList duplicateList : allNewSimiltudes) {
-//                    System.out.println(">add "+duplicateList);
-                    tempFileDuplicatesMap.put(duplicateList.getFilestamp(), duplicateList);
-                    for (File file : duplicateList.getFiles()) {
-                        tempFileToStampMap.put(file, duplicateList.getFilestamp());
-                    }
-                }
-                removeSingletons();
-//                taskMonitor.stepOut();
-//                System.out.println(">> fc.index "+taskMonitor.getIndex());
+    private void processFinalize(Object[] progress_params, NutsProgressMonitor taskMonitor) {
+        chrono("processFinalize", () -> {
+            removeSingletons(taskMonitor);
+            ArrayList<DuplicateList> v = new ArrayList<DuplicateList>();
+            if (isFindFolderDuplicates()) {
+                v.addAll((tempFolderDuplicatesMap.values()));
             }
-
-            // ---------------  FOLDERS  -----------------------
-            if (folderstampFilterList != null) {
-                int dmax = folderstampFilterList.getMaxLevels();
-                for (int d = 1; d < dmax; d++) {
-                    //taskMonitor.progress("Folderstamp",new Object[]{d});
-                    Hashtable<Filestamp, DuplicateList> newHashtable = new Hashtable<Filestamp, DuplicateList>();
-                    PROGRESS_PARAMS[FOLDER_FILTER_INDEX] = d;
-                    FilestampFilter filestampFilter = folderstampFilterList.getFilestampFilter(d);
-                    PROGRESS_PARAMS[FOLDER_FILTER_NAME] = filestampFilter==null?"":filestampFilter.toString();
-                    PROGRESS_PARAMS[FILES_COUNT] = tempFileToStampMap.size();
-                    PROGRESS_PARAMS[FOLDERS_COUNT] = tempFolderToStampMap.size();
-                    PROGRESS_PARAMS[DUP_FILES_COUNT] = tempFileDuplicatesMap.size();
-                    PROGRESS_PARAMS[DUP_FOLDERS_COUNT] = tempFolderDuplicatesMap.size();
-                    final ProgressMonitor next = taskMonitor.stepInto("Folderstamp", PROGRESS_PARAMS).incremental(tempFolderDuplicatesMap.size());
-                    int index = 0;
-                    for (DuplicateList duplicateList : tempFolderDuplicatesMap.values()) {
-                        PROGRESS_PARAMS[FILES_COUNT] = tempFileToStampMap.size();
-                        PROGRESS_PARAMS[FOLDERS_COUNT] = tempFolderToStampMap.size();
-                        PROGRESS_PARAMS[DUP_FILES_COUNT] = tempFileDuplicatesMap.size();
-                        PROGRESS_PARAMS[DUP_FOLDERS_COUNT] = tempFolderDuplicatesMap.size();
-                        PROGRESS_PARAMS[INDEX] = ++index;
-                        next.inc("FolderstampItem", PROGRESS_PARAMS);
-                        for (File file : duplicateList.getFiles()) {
-                            Filestamp filestamp = folderstampFilterList.getNextFilterSig(file, duplicateList.getFilestamp(), d, this);
-                            DuplicateList newDuplicateList = newHashtable.get(filestamp);
-                            if (newDuplicateList == null) {
-                                newDuplicateList = new DuplicateList(filestamp);
-                                newHashtable.put(filestamp, newDuplicateList);
-                            }
-                            tempFolderToStampMap.put(file, filestamp);
-                            newDuplicateList.addFile(file);
-                        }
-                    }
-                    tempFolderDuplicatesMap = newHashtable;
-                    removeSingletons();
-//                    taskMonitor.stepOut();
-//                    System.out.println(">> ds.index "+taskMonitor.getIndex());
-                }
+            if (isFindFileDuplicates()) {
+                v.addAll((tempFileDuplicatesMap.values()));
             }
+            tempStatistics.endTimeMillis = System.currentTimeMillis();
+            searchData = new SearchData(v);
+            searchData.setStatistics(tempStatistics);
+            searchData.setKifkif(this);
+            tempFileDuplicatesMap = null;
+            tempFileToStampMap = null;
+            tempFolderDuplicatesMap = null;
+            tempFolderToStampMap = null;
+            tempStatistics = null;
+            taskMonitor.complete();
+        });
+    }
 
+    private void processFolderContents(Object[] PROGRESS_PARAMS, NutsProgressMonitor taskMonitor) {
+        chrono("processFolderContents", () -> {
             if (folderContentComparator != null) {
+                NutsProgressMonitor[] split = taskMonitor.split(5, 2, 1);
                 ArrayList<DuplicateList> allNewSimiltudes = new ArrayList<DuplicateList>();
                 PROGRESS_PARAMS[FILES_COUNT] = tempFileToStampMap.size();
                 PROGRESS_PARAMS[FOLDERS_COUNT] = tempFolderToStampMap.size();
                 PROGRESS_PARAMS[DUP_FILES_COUNT] = tempFileDuplicatesMap.size();
                 PROGRESS_PARAMS[DUP_FOLDERS_COUNT] = tempFolderDuplicatesMap.size();
-                final ProgressMonitor next = taskMonitor.stepInto("FolderContent", PROGRESS_PARAMS).incremental(tempFolderDuplicatesMap.size());
+                final NutsProgressMonitor next = split[0].incremental(tempFolderDuplicatesMap.size());
                 int index = 0;
-                for (Iterator<DuplicateList> it = tempFolderDuplicatesMap.values().iterator(); it.hasNext();) {
+                for (Iterator<DuplicateList> it = tempFolderDuplicatesMap.values().iterator(); it.hasNext(); ) {
                     PROGRESS_PARAMS[FILES_COUNT] = tempFileToStampMap.size();
                     PROGRESS_PARAMS[FOLDERS_COUNT] = tempFolderToStampMap.size();
                     PROGRESS_PARAMS[DUP_FILES_COUNT] = tempFileDuplicatesMap.size();
                     PROGRESS_PARAMS[DUP_FOLDERS_COUNT] = tempFolderDuplicatesMap.size();
                     PROGRESS_PARAMS[INDEX] = ++index;
-                    next.inc("FolderContentItem", PROGRESS_PARAMS);
+                    next.inc(NutsMessage.ofCstyle("FolderContentItem %s", Arrays.asList(PROGRESS_PARAMS)));
                     DuplicateList duplicateList = it.next();
                     File[] files = duplicateList.getFiles().toArray(new File[duplicateList.getFileCount()]);
                     ArrayList<File> filesCopies = new ArrayList<File>();
@@ -569,7 +474,7 @@ public class KifKif implements Serializable, Cloneable {
                             if (
                                     !filesCopies.contains(file)
                                             && folderContentComparator.compareFileContent(this, file, leader)
-                                    ) {
+                            ) {
                                 ArrayList<File> leaderTwins = entry.getValue();
                                 leaderTwins.add(file);
                                 filesCopies.add(file);
@@ -606,44 +511,230 @@ public class KifKif implements Serializable, Cloneable {
                         tempFolderToStampMap.put(file, duplicateList.getFilestamp());
                     }
                 }
-                removeSingletons();
-                removeExpandedFiles();
+                split[0].complete();
+                removeSingletons(split[1]);
+                removeExpandedFiles(split[2]);
 //                taskMonitor.stepOut();
 //                System.out.println(">> dc.index "+taskMonitor.getIndex());
             }
-            removeSingletons();
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
+            taskMonitor.complete();
+        });
+    }
 
+    private void processFolderTimestamps(Object[] PROGRESS_PARAMS, NutsProgressMonitor taskMonitor) {
+        chrono("processFolderTimestamps", () -> {
+            // ---------------  FOLDERS  -----------------------
+            if (folderStampFilterList != null) {
+                int dmax = folderStampFilterList.getMaxLevels();
+                NutsProgressMonitor[] split = taskMonitor.split(dmax - 1);
+                for (int d = 1; d < dmax; d++) {
+                    NutsProgressMonitor[] split2 = split[d - 1].split(5, 2);
+                    Hashtable<Filestamp, DuplicateList> newHashtable = new Hashtable<Filestamp, DuplicateList>();
+                    PROGRESS_PARAMS[FOLDER_FILTER_INDEX] = d;
+                    FilestampFilter filestampFilter = folderStampFilterList.getFilestampFilter(d);
+                    PROGRESS_PARAMS[FOLDER_FILTER_NAME] = filestampFilter == null ? "" : filestampFilter.toString();
+                    PROGRESS_PARAMS[FILES_COUNT] = tempFileToStampMap.size();
+                    PROGRESS_PARAMS[FOLDERS_COUNT] = tempFolderToStampMap.size();
+                    PROGRESS_PARAMS[DUP_FILES_COUNT] = tempFileDuplicatesMap.size();
+                    PROGRESS_PARAMS[DUP_FOLDERS_COUNT] = tempFolderDuplicatesMap.size();
+                    final NutsProgressMonitor next = split2[0].incremental(tempFolderDuplicatesMap.size());
+                    int index = 0;
+                    for (DuplicateList duplicateList : tempFolderDuplicatesMap.values()) {
+                        PROGRESS_PARAMS[FILES_COUNT] = tempFileToStampMap.size();
+                        PROGRESS_PARAMS[FOLDERS_COUNT] = tempFolderToStampMap.size();
+                        PROGRESS_PARAMS[DUP_FILES_COUNT] = tempFileDuplicatesMap.size();
+                        PROGRESS_PARAMS[DUP_FOLDERS_COUNT] = tempFolderDuplicatesMap.size();
+                        PROGRESS_PARAMS[INDEX] = ++index;
+                        next.inc(NutsMessage.ofCstyle("FolderstampItem %s", Arrays.asList(PROGRESS_PARAMS)));
+                        for (File file : duplicateList.getFiles()) {
+                            Filestamp filestamp = folderStampFilterList.getNextFilterSig(file, duplicateList.getFilestamp(), d, this);
+                            DuplicateList newDuplicateList = newHashtable.get(filestamp);
+                            if (newDuplicateList == null) {
+                                newDuplicateList = new DuplicateList(filestamp);
+                                newHashtable.put(filestamp, newDuplicateList);
+                            }
+                            tempFolderToStampMap.put(file, filestamp);
+                            newDuplicateList.addFile(file);
+                        }
+                    }
+                    tempFolderDuplicatesMap = newHashtable;
+                    split2[0].complete();
+                    removeSingletons(split2[1]);
+//                    taskMonitor.stepOut();
+//                    System.out.println(">> ds.index "+taskMonitor.getIndex());
+                }
+            }
+            taskMonitor.complete();
+        });
+    }
 
-        ArrayList<DuplicateList> v = new ArrayList<DuplicateList>();
-        if (isFindFolderDuplicates()) {
-            v.addAll((tempFolderDuplicatesMap.values()));
-        }
-        if (isFindFileDuplicates()) {
-            v.addAll((tempFileDuplicatesMap.values()));
-        }
-        taskMonitor.inc("Final", PROGRESS_PARAMS);
-        //System.out.println(">> final.index "+taskMonitor.getIndex());
-        tempStatistics.endTime = System.currentTimeMillis();
-        SearchData searchData = new SearchData(v);
-        searchData.setStatistics(tempStatistics);
-        searchData.setKifkif(this);
+    private void processInit(Object[] PROGRESS_PARAMS, NutsProgressMonitor taskMonitor) {
+        chrono("processInit", () -> {
+            NutsProgressMonitor[] split = taskMonitor.split(5, 2);
+            FileSetList li = new FileSetList(includedFileSet);
+            PROGRESS_PARAMS[FILE_SET] = li;
+            PROGRESS_PARAMS[FILE_FILTER_NAME] = (fileStampFilterList == null ? "" : String.valueOf(fileStampFilterList.getFilestampFilter(0)));
+            PROGRESS_PARAMS[FILE_FILTER_INDEX] = 0;
+            PROGRESS_PARAMS[FOLDER_FILTER_NAME] = (folderStampFilterList == null ? "" : String.valueOf(folderStampFilterList.getFilestampFilter(0)));
+            PROGRESS_PARAMS[FOLDER_FILTER_INDEX] = 0;
 
-        tempFileDuplicatesMap = null;
-        tempFileToStampMap = null;
-        tempFolderDuplicatesMap = null;
-        tempFolderToStampMap = null;
-        tempStatistics = null;
+            PROGRESS_PARAMS[INIT_FILES_COUNT] = tempStatistics.sourceFilesCount;
+            PROGRESS_PARAMS[INIT_FOLDERS_COUNT] = tempStatistics.sourceFoldersCount;
+//                taskMonitor.inc();
+            for (EstimateIterator<File> i = li.iterate(this); i.hasNext(); ) {
+                File file = i.next();
+                PROGRESS_PARAMS[INIT_FILES_COUNT] = tempStatistics.sourceFilesCount;
+                PROGRESS_PARAMS[INIT_FOLDERS_COUNT] = tempStatistics.sourceFoldersCount;
+//                    taskMonitor.inc("InitItem", PROGRESS_PARAMS);
+                registerFile(file);
+                split[0].setProgress(i.progressRatio(), NutsMessage.ofCstyle("InitItem %s", Arrays.asList(PROGRESS_PARAMS)));
+            }
+            if (tempStatistics.sourceFilesCount == 0 && tempStatistics.sourceFoldersCount == 0) {
+                throw new IllegalArgumentException("Not Valid File set found");
+            }
+            split[0].complete();
+            removeSingletons(split[1]);
+            taskMonitor.complete(NutsMessage.ofCstyle("InitItem %s", Arrays.asList(PROGRESS_PARAMS)));
+        });
+    }
 
-        return searchData;
+    private void processFileContents(Object[] PROGRESS_PARAMS, NutsProgressMonitor taskMonitor) {
+        chrono("processFileContents", () -> {
+            if (fileContentComparator != null) {
+                NutsProgressMonitor[] split = taskMonitor.split(5, 1, 2);
+
+                ArrayList<DuplicateList> allNewSimilitudes = new ArrayList<DuplicateList>();
+                PROGRESS_PARAMS[FILES_COUNT] = tempFileToStampMap.size();
+                PROGRESS_PARAMS[FOLDERS_COUNT] = tempFolderToStampMap.size();
+                PROGRESS_PARAMS[DUP_FILES_COUNT] = tempFileDuplicatesMap.size();
+                PROGRESS_PARAMS[DUP_FOLDERS_COUNT] = tempFolderDuplicatesMap.size();
+                final NutsProgressMonitor next = split[0].incremental(tempFileDuplicatesMap.size());
+                int index = 0;
+                for (Iterator<DuplicateList> it = tempFileDuplicatesMap.values().iterator(); it.hasNext(); ) {
+                    PROGRESS_PARAMS[FILES_COUNT] = tempFileToStampMap.size();
+                    PROGRESS_PARAMS[FOLDERS_COUNT] = tempFolderToStampMap.size();
+                    PROGRESS_PARAMS[DUP_FILES_COUNT] = tempFileDuplicatesMap.size();
+                    PROGRESS_PARAMS[DUP_FOLDERS_COUNT] = tempFolderDuplicatesMap.size();
+                    PROGRESS_PARAMS[INDEX] = ++index;
+                    next.inc(NutsMessage.ofCstyle("FileContentItem %s", Arrays.asList(PROGRESS_PARAMS)));
+                    DuplicateList duplicateList = it.next();
+//                    System.out.println(">>>>> "+duplicateList);
+                    File[] files = duplicateList.getFiles().toArray(new File[duplicateList.getFileCount()]);
+                    ArrayList<File> filesCopies = new ArrayList<File>();
+                    Hashtable<File, ArrayList<File>> filesLeaders = new Hashtable<File, ArrayList<File>>();
+
+                    //Hashtable<File, ArrayList<File>> fileHash = new Hashtable<File, ArrayList<File>>();
+                    for (File file : files) {
+                        boolean found = false;
+                        for (Map.Entry<File, ArrayList<File>> entry : filesLeaders.entrySet()) {
+                            File leader = entry.getKey();
+                            if (
+                                    !filesCopies.contains(file)
+                                            && fileContentComparator.compareFileContent(this, file, leader)
+                            ) {
+                                ArrayList<File> leaderTwins = entry.getValue();
+                                leaderTwins.add(file);
+                                filesCopies.add(file);
+//                                System.out.println(">twin "+files[i]);
+                                found = true;
+                            }
+                        }
+                        if (!found) {
+                            ArrayList<File> leaderTwins = new ArrayList<File>();
+                            leaderTwins.add(file);
+                            filesLeaders.put(file, leaderTwins);
+//                            System.out.println(">new "+files[i]);
+                        } else {
+//                            System.out.println(">already "+files[i]);
+                        }
+                    }
+                    //noinspection UnusedAssignment
+                    filesCopies = null;
+                    // HashSet to remove Duplicates
+                    if (filesLeaders.size() > 1) {
+//                        System.out.println(">remove "+duplicateList);
+                        it.remove();
+                        int x = 1;
+                        for (Map.Entry<File, ArrayList<File>> entry : filesLeaders.entrySet()) {
+                            DuplicateList newDuplicateList = new DuplicateList(duplicateList.getFilestamp().combine(new DefaultFilestamp("<" + (x + 1) + ">")));
+                            newDuplicateList.addAllFiles(entry.getValue());
+                            allNewSimilitudes.add(newDuplicateList);
+                        }
+                    }
+                }
+                split[0].complete();
+                NutsProgressMonitor s1 = split[1].incremental(allNewSimilitudes.size());
+                for (DuplicateList duplicateList : allNewSimilitudes) {
+//                    System.out.println(">add "+duplicateList);
+                    tempFileDuplicatesMap.put(duplicateList.getFilestamp(), duplicateList);
+                    for (File file : duplicateList.getFiles()) {
+                        tempFileToStampMap.put(file, duplicateList.getFilestamp());
+                    }
+                    s1.inc();
+                }
+                s1.complete();
+
+                removeSingletons(split[2]);
+//                taskMonitor.stepOut();
+//                System.out.println(">> fc.index "+taskMonitor.getIndex());
+            }
+            taskMonitor.complete(NutsMessage.ofCstyle("processFileContents %s", Arrays.asList(PROGRESS_PARAMS)));
+        });
+    }
+
+    private void processFileTimestamps(Object[] PROGRESS_PARAMS, NutsProgressMonitor taskMonitor) {
+        chrono("processFileTimestamps", () -> {
+            int max = fileStampFilterList.getMaxLevels();
+            if (max == 0) {
+                taskMonitor.complete();
+                return;
+            }
+            if (max < 0) {
+                throw new IllegalArgumentException("Not Valid File stamp found");
+            }
+            NutsProgressMonitor[] split = taskMonitor.split(max - 1);
+            for (int d = 1; d < max; d++) {
+                NutsProgressMonitor[] split2 = split[d - 1].split(5, 2);
+                NutsProgressMonitor s0 = split2[0].incremental(tempFileDuplicatesMap.size());
+                Hashtable<Filestamp, DuplicateList> newHashtable = new Hashtable<Filestamp, DuplicateList>();
+                PROGRESS_PARAMS[FILE_FILTER_INDEX] = d;
+                PROGRESS_PARAMS[FILE_FILTER_NAME] = fileStampFilterList.getFilestampFilter(d).toString();
+                PROGRESS_PARAMS[FILES_COUNT] = tempFileToStampMap.size();
+                PROGRESS_PARAMS[FOLDERS_COUNT] = tempFolderToStampMap.size();
+                PROGRESS_PARAMS[DUP_FILES_COUNT] = tempFileDuplicatesMap.size();
+                PROGRESS_PARAMS[DUP_FOLDERS_COUNT] = tempFolderDuplicatesMap.size();
+
+                int index = 0;
+                for (DuplicateList duplicateList : tempFileDuplicatesMap.values()) {
+                    PROGRESS_PARAMS[FILES_COUNT] = tempFileToStampMap.size();
+                    PROGRESS_PARAMS[FOLDERS_COUNT] = tempFolderToStampMap.size();
+                    PROGRESS_PARAMS[DUP_FILES_COUNT] = tempFileDuplicatesMap.size();
+                    PROGRESS_PARAMS[DUP_FOLDERS_COUNT] = tempFolderDuplicatesMap.size();
+                    PROGRESS_PARAMS[INDEX] = ++index;
+                    s0.inc(NutsMessage.ofCstyle("FilestampItem %s", Arrays.asList(PROGRESS_PARAMS)));
+                    for (File file : duplicateList.getFiles()) {
+                        Filestamp filestamp = fileStampFilterList.getNextFilterSig(file, duplicateList.getFilestamp(), d, this);
+                        DuplicateList newDuplicateList = newHashtable.get(filestamp);
+                        if (newDuplicateList == null) {
+                            newDuplicateList = new DuplicateList(filestamp);
+                            newHashtable.put(filestamp, newDuplicateList);
+                        }
+                        tempFileToStampMap.put(file, filestamp);
+                        newDuplicateList.addFile(file);
+                    }
+                }
+                tempFileDuplicatesMap = newHashtable;
+                s0.complete();
+                removeSingletons(split2[1]);
+            }
+            taskMonitor.complete();
+        });
     }
 
 
     /**
-     * @param f1
-     * @param f2
+     * @param f1 f1
+     * @param f2 f2
      * @return true is f1 and f2 are known (according to the actual search process) to be similar
      */
     public boolean quickCompareFiles(File f1, File f2) {
@@ -733,29 +824,27 @@ public class KifKif implements Serializable, Cloneable {
      * @param folderContentComparator
      */
     public void setFolderContentComparator(FileContentComparator folderContentComparator) {
-        diffFileMode = FileDiffFactory.UNKNOWN;
-        diffFolderMode = FileDiffFactory.UNKNOWN;
+        this.diffFileMode = NutsEnumSet.noneOf(FileMode.class);
         this.folderContentComparator = folderContentComparator;
     }
 
     /**
-     * list of thefilestamps used for comparing folders
+     * list of the filestamps used for comparing folders
      *
-     * @return list of thefilestamps used for comparing folders
+     * @return list of the filestamps used for comparing folders
      */
-    public FilestampFilterList getFolderstampFilterList() {
-        return folderstampFilterList;
+    public FileStampFilterList getFolderStampFilterList() {
+        return folderStampFilterList;
     }
 
     /**
      * updates list of thefilestamps used for comparing folder
      *
-     * @param folderstampFilterList
+     * @param folderFilterList
      */
-    public void setFolderstampFilterList(FilestampFilterList folderstampFilterList) {
-        diffFileMode = FileDiffFactory.UNKNOWN;
-        diffFolderMode = FileDiffFactory.UNKNOWN;
-        this.folderstampFilterList = folderstampFilterList;
+    public void setFolderStampFilterList(FileStampFilterList folderFilterList) {
+        this.diffFileMode = NutsEnumSet.noneOf(FileMode.class);
+        this.folderStampFilterList = folderFilterList;
     }
 
     /**
@@ -771,8 +860,7 @@ public class KifKif implements Serializable, Cloneable {
      * @param fileContentComparator
      */
     public void setFileContentComparator(FileContentComparator fileContentComparator) {
-        diffFileMode = FileDiffFactory.UNKNOWN;
-        diffFolderMode = FileDiffFactory.UNKNOWN;
+        this.diffFileMode = NutsEnumSet.noneOf(FileMode.class);
         this.fileContentComparator = fileContentComparator;
     }
 
@@ -781,14 +869,13 @@ public class KifKif implements Serializable, Cloneable {
      *
      * @return list of thefilestamps used for comparing files
      */
-    public FilestampFilterList getFilestampFilterList() {
-        return filestampFilterList;
+    public FileStampFilterList getFileStampFilterList() {
+        return fileStampFilterList;
     }
 
-    public void setFilestampFilterList(FilestampFilterList filestampFilterList) {
-        diffFileMode = FileDiffFactory.UNKNOWN;
-        diffFolderMode = FileDiffFactory.UNKNOWN;
-        this.filestampFilterList = filestampFilterList;
+    public void setFileStampFilterList(FileStampFilterList fileStampFilterList) {
+        this.diffFileMode = NutsEnumSet.noneOf(FileMode.class);
+        this.fileStampFilterList = fileStampFilterList;
     }
 
     /**
@@ -797,21 +884,16 @@ public class KifKif implements Serializable, Cloneable {
      *
      * @return the used Diff mode or FileDiffFactory
      */
-    public int getDiffFileMode() {
+    public NutsEnumSet<FileMode> getDiffFileMode() {
         return diffFileMode;
     }
 
-    public int getDiffFolderMode() {
-        return diffFolderMode;
-    }
-
-
     public boolean isFindFolderDuplicates() {
-        return showFolderDuplicates && (folderstampFilterList != null || folderContentComparator != null);
+        return showFolderDuplicates && (folderStampFilterList != null || folderContentComparator != null);
     }
 
     public boolean isFindFileDuplicates() {
-        return showFileDuplicates && (filestampFilterList != null || fileContentComparator != null);
+        return showFileDuplicates && (fileStampFilterList != null || fileContentComparator != null);
     }
 
     public boolean isShowFolderDuplicates() {
@@ -842,31 +924,33 @@ public class KifKif implements Serializable, Cloneable {
      * updates filters and comparators according to the given mode
      * see FileDiffFactory for available modes
      */
-    public void setDiffFileMode(int diffFileMode) {
-        this.diffFileMode = diffFileMode;
-        if (FileDiffFactory.UNKNOWN != diffFileMode) {
-            this.showFileDuplicates = true;
-            this.filestampFilterList = FileDiffFactory.createFilestampFilterList(diffFileMode);
-            this.fileContentComparator = FileDiffFactory.createFileContentComparator(diffFileMode);
-            if (filestampFilterList == null) {
-                throw new IllegalStateException("At least a filestamp filter should be set");
-            }
-        }
+    public void setFileMode(NutsEnumSet<FileMode> fileModes) {
+        setFileMode(fileModes.toArray());
     }
 
-    /**
-     * updates filters and comparators according to the given mode
-     * see FileDiffFactory for available modes
-     */
-    public void setDiffFolderMode(int diffFolderMode) {
-        this.diffFolderMode = diffFolderMode;
-        if (FileDiffFactory.UNKNOWN != diffFileMode) {
-            this.folderstampFilterList = FileDiffFactory.createFolderstampFilterList(diffFolderMode);
-            this.folderContentComparator = FileDiffFactory.createFolderContentComparator(diffFolderMode);
-            this.showFolderDuplicates = (folderstampFilterList != null || folderContentComparator != null);
-            if (filestampFilterList == null) {
-                throw new IllegalStateException("At least a filestamp filter should be set");
-            }
+    public void setFileMode(FileMode... fileModes) {
+        this.diffFileMode = NutsEnumSet.of(Arrays.asList(fileModes), FileMode.class);
+        if (diffFileMode.isEmpty()) {
+            diffFileMode = diffFileMode.add(FileMode.FILE_NAME);
+            diffFileMode = diffFileMode.add(FileMode.FILE_SIZE);
+            diffFileMode = diffFileMode.add(FileMode.FILE_CONTENT);
+            diffFileMode = diffFileMode.add(FileMode.FOLDER_NAME);
+            diffFileMode = diffFileMode.add(FileMode.FOLDER_SIZE);
+            diffFileMode = diffFileMode.add(FileMode.FOLDER_CONTENT);
+        }
+
+        this.showFileDuplicates = !this.diffFileMode.isEmpty();
+        this.fileStampFilterList = new FileStampFilterList().addFileFilters(fileModes);
+        this.fileContentComparator = FileDiffFactory.createFileContentComparator(fileModes);
+        this.folderStampFilterList = new FileStampFilterList().addFolderFilters(fileModes);
+        this.folderContentComparator = FileDiffFactory.createFolderContentComparator(fileModes);
+        this.showFolderDuplicates = (folderStampFilterList != null || folderContentComparator != null);
+
+        if (fileStampFilterList == null) {
+            throw new IllegalStateException("At least a file stamp filter should be set");
+        }
+        if (folderStampFilterList == null) {
+            throw new IllegalStateException("At least a folder stamp filter should be set");
         }
     }
 
@@ -879,7 +963,7 @@ public class KifKif implements Serializable, Cloneable {
     }
 
     @Override
-    protected KifKif clone(){
+    protected KifKif clone() {
         try {
             KifKif o = (KifKif) super.clone();
             return o;
@@ -887,5 +971,5 @@ public class KifKif implements Serializable, Cloneable {
             throw new RuntimeException(ex);
         }
     }
-    
+
 }

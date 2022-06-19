@@ -1,4 +1,6 @@
 
+.idea/
 modules/kifkif-core/target/
+modules/kifkif-swing/target/
 /target/
 /modules/kifkif-core.zip
