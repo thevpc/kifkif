@@ -11,6 +11,7 @@ import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.beans.PropertyChangeSupport;
 import java.io.File;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Stack;
@@ -20,19 +21,16 @@ import javax.swing.event.TreeModelEvent;
 import javax.swing.event.TreeModelListener;
 
 import net.thevpc.common.swing.label.MemoryUseIconTray;
-import net.thevpc.common.time.DatePart;
-import net.thevpc.common.time.TimeDuration;
-import net.thevpc.nuts.NutsMessage;
-import net.thevpc.nuts.NutsSession;
-import net.thevpc.nuts.util.NutsProgressEventType;
-import net.thevpc.nuts.util.NutsProgressHandler;
-import net.thevpc.nuts.util.NutsProgressHandlerEvent;
-import net.thevpc.nuts.util.NutsProgressMonitorModel;
+import net.thevpc.nuts.NSession;
+import net.thevpc.nuts.time.NDuration;
+import net.thevpc.nuts.time.NProgressHandler;
+import net.thevpc.nuts.time.NProgressHandlerEvent;
+import net.thevpc.nuts.util.NMsg;
 
 /**
  * @author vpc Date: 19 janv. 2005 Time: 16:36:41
  */
-class StatusbarTaskMonitor implements NutsProgressHandler {
+class StatusbarTaskMonitor implements NProgressHandler {
 
     private JComponent box;
     private JProgressBar progressBar = new JProgressBar(JProgressBar.HORIZONTAL);
@@ -48,9 +46,11 @@ class StatusbarTaskMonitor implements NutsProgressHandler {
     private PropertyChangeSupport support;
     public static final String PROPERTY_STAT_CHANGED = "PROPERTY_STAT_CHANGED";
     private double currentProgress;
-    private NutsMessage currentMessage;
+    private NMsg currentMessage;
+    private NSession session;
 
-    public StatusbarTaskMonitor() {
+    public StatusbarTaskMonitor(NSession session) {
+        this.session=session;
         support = new PropertyChangeSupport(this);
         JPanel b = new JPanel(new GridBagLayout());
         GridBagConstraints c = new GridBagConstraints();
@@ -134,7 +134,7 @@ class StatusbarTaskMonitor implements NutsProgressHandler {
         timerAction = new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 long p = ((timer == null) ? endTime : System.currentTimeMillis()) - startTime;
-                chronoLabel.setText(TimeDuration.ofMillis(p).formatShort(DatePart.SECOND));
+                chronoLabel.setText(NDuration.ofMillis(p).withSmallestUnit(ChronoUnit.SECONDS).format(session).filteredText());
             }
         };
     }
@@ -148,7 +148,7 @@ class StatusbarTaskMonitor implements NutsProgressHandler {
     }
 
     @Override
-    public void onEvent(NutsProgressHandlerEvent event) {
+    public void onEvent(NProgressHandlerEvent event) {
         this.currentMessage = event.getModel().getMessage();
         this.currentProgress = event.getModel().getProgress();
         SwingUtilities.invokeLater(new Runnable() {

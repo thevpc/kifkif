@@ -47,11 +47,9 @@ import net.thevpc.common.prs.log.LoggerProvider;
 import net.thevpc.common.prs.locale.LocaleManager;
 import net.thevpc.common.swing.prs.ComponentResourcesUpdater;
 import net.thevpc.common.swing.prs.PRSManager;
-import net.thevpc.common.swing.util._Utils;
-import net.thevpc.nuts.NutsApplicationContext;
-import net.thevpc.nuts.NutsSession;
-import net.thevpc.nuts.util.NutsEnumSet;
-import net.thevpc.nuts.util.NutsProgressMonitors;
+import net.thevpc.nuts.NSession;
+import net.thevpc.nuts.time.NProgressMonitors;
+import net.thevpc.nuts.util.NEnumSet;
 import net.thevpc.swing.plaf.UIPlafManager;
 
 /**
@@ -219,20 +217,18 @@ public class Kkw implements ResourceSetHolder {
     private LaunchPalette launchPalette;
     private Configuration configuration;
     private boolean processing;
-    private NutsApplicationContext applicationContext;
-    private NutsSession session;
+    private NSession session;
     private Collection<Action> actions = new ArrayList<Action>();
     private transient PropertyChangeSupport support;
 
-    public Kkw(NutsApplicationContext applicationContext) {
-        this.applicationContext = applicationContext;
-        this.session = this.applicationContext.getSession();
-        if (session.getLocale() != null) {
-            Locale locale = new Locale(session.getLocale());
+    public Kkw(NSession session) {
+        this.session = session;
+        if (this.session.getLocale() != null) {
+            Locale locale = new Locale(this.session.getLocale());
             Locale.setDefault(locale);
             LocaleManager.getInstance().setLocale(locale);
         }
-        this.kifKif = new KifKif(session);
+        this.kifKif = new KifKif(this.session);
         UIPlafManager.getCurrentManager().apply("FlatDark");
         LocaleManager.getInstance().registerLocale(BOOT_LOCALE);
         LocaleManager.getInstance().registerLocale(Locale.ENGLISH);
@@ -240,7 +236,7 @@ public class Kkw implements ResourceSetHolder {
         LocaleManager.getInstance().registerLocale(Locale.ITALIAN);
         LocaleManager.getInstance().registerLocale(new Locale("ar"));
         try {
-            configuration = new Configuration(applicationContext.getConfigFolder().resolve("kkw.xml"), true);
+            configuration = new Configuration(session.getAppConfFolder().resolve("kkw.xml"), true);
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -280,7 +276,7 @@ public class Kkw implements ResourceSetHolder {
         startButton.putClientProperty("showText", Boolean.TRUE);
         stopButton = PRSManager.createButton("stopButton");
         stopButton.putClientProperty("showText", Boolean.TRUE);
-        statusbar = new StatusbarTaskMonitor();
+        statusbar = new StatusbarTaskMonitor(session);
 
         statsSrcFoldersCountLabel = PRSManager.createLabel("statsSrcFoldersCountLabel");
         statsSrcFilesCountLabel = PRSManager.createLabel("statsSrcFilesCountLabel");
@@ -510,7 +506,7 @@ public class Kkw implements ResourceSetHolder {
                             ExportSupport exportSupport = (ExportSupport) ((JComponent) e.getSource()).getClientProperty("ExportSupport");
                             HashMap<String, Object> hashMap = new HashMap<String, Object>();
                             hashMap.put(ExportSupport.KKW_PROPERTY, Kkw.this);
-                            exportSupport.export(getResultTree().getSearchData(), null, hashMap);
+                            exportSupport.export(getResultTree().getSearchData(), null, hashMap, session);
                         } catch (Exception e1) {
                             JOptionPane.showMessageDialog(getMainPanel(),
                                     getResources().get2("msg.ResultExport.Exception", e1.getMessage()),
@@ -603,7 +599,7 @@ public class Kkw implements ResourceSetHolder {
     }
 
     private void setKifkif(KifKif newKifkif) {
-        NutsEnumSet<FileMode> fileOption = newKifkif.getDiffFileMode();
+        NEnumSet<FileMode> fileOption = newKifkif.getDiffFileMode();
         boolean caseSensitiveNames = newKifkif.isCaseInsensitiveNames();
 
 //        optionInsensitiveCheck.setSelected(caseSensitiveNames);
@@ -729,7 +725,7 @@ public class Kkw implements ResourceSetHolder {
     }
 
     private void updateModelFromView() throws ParseException {
-        NutsEnumSet<FileMode> fileOption = NutsEnumSet.noneOf(FileMode.class);
+        NEnumSet<FileMode> fileOption = NEnumSet.noneOf(FileMode.class);
         fileOption = fileOption.add((optionFileNameCheck.isSelected()) ? FileMode.FILE_NAME : null);
         fileOption = fileOption.add((optionFileExtensionCheck.isSelected()) ? FileMode.FILE_EXTENSION : null);
         fileOption = fileOption.add((optionFileSizeCheck.isSelected()) ? FileMode.FILE_SIZE : null);
@@ -842,7 +838,7 @@ public class Kkw implements ResourceSetHolder {
         setProcessing(true);
         try {
             resultTree.clear();
-            SearchData searchData = kifKif.findDuplicates(NutsProgressMonitors.of(session).of(statusbar));
+            SearchData searchData = kifKif.findDuplicates(NProgressMonitors.of(session).of(statusbar));
             if (getConfiguration().getBoolean(KkwOptionDialog.OPTION_AUTO_MARK_FILES_TO_DELETE, false)) {
                 searchData.setSelectedDuplicatesAuto();
             }

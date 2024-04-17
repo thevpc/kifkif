@@ -2,20 +2,22 @@ package net.thevpc.kifkif;
 
 import java.io.File;
 import java.util.*;
-import java.util.stream.Collectors;
 
 import net.thevpc.common.prs.log.LoggerProvider;
 
 import net.thevpc.kifkif.swing.export.ExportSupport;
 import net.thevpc.kifkif.swing.export.TextExportSupport;
-import net.thevpc.kifkif.swing.Configuration;
 import net.thevpc.kifkif.swing.Kkw;
 import net.thevpc.common.prs.messageset.MessageSet;
 import net.thevpc.nuts.*;
-import net.thevpc.nuts.cmdline.NutsArgument;
-import net.thevpc.nuts.cmdline.NutsCommandLine;
-import net.thevpc.nuts.util.NutsProgressMonitor;
-import net.thevpc.nuts.util.NutsProgressMonitors;
+import net.thevpc.nuts.cmdline.NArg;
+import net.thevpc.nuts.cmdline.NCmdLine;
+import net.thevpc.nuts.cmdline.NCmdLineContext;
+import net.thevpc.nuts.cmdline.NCmdLineProcessor;
+import net.thevpc.nuts.time.NProgressMonitor;
+import net.thevpc.nuts.time.NProgressMonitors;
+import net.thevpc.nuts.util.NLiteral;
+import net.thevpc.nuts.util.NMsg;
 
 /**
  * Kikif Console
@@ -23,7 +25,7 @@ import net.thevpc.nuts.util.NutsProgressMonitors;
  * Date: 5 janv. 2005
  * Time: 21:02:48
  */
-public final class Kkc implements NutsApplication {
+public final class Kkc implements NApplication {
     public Kkc() {
 
     }
@@ -33,17 +35,17 @@ public final class Kkc implements NutsApplication {
     }
 
     @Override
-    public void run(NutsApplicationContext applicationContext) {
+    public void run(NSession session) {
         Kkc kkc = new Kkc();
-        applicationContext.processCommandLine(new NutsAppCmdProcessor() {
+        session.processAppCmdLine(new NCmdLineProcessor() {
             Options options = new Options();
 
             @Override
-            public boolean onCmdNextOption(NutsArgument option, NutsCommandLine commandline, NutsApplicationContext context) {
+            public boolean onCmdNextOption(NArg option, NCmdLine commandline, NCmdLineContext context) {
                 switch (option.key()) {
                     case "-c":
                     case "--console": {
-                        NutsArgument a = commandline.nextBoolean().get();
+                        NArg a = commandline.nextFlag().get();
                         if (a.isActive()) {
                             options.console = a.getBooleanValue().get();
                         }
@@ -51,7 +53,7 @@ public final class Kkc implements NutsApplication {
                     }
                     case "-o":
                     case "--output": {
-                        NutsArgument a = commandline.nextString().get();
+                        NArg a = commandline.nextEntry().get();
                         if (a.isActive()) {
                             options.file=(a.getStringValue().get());
                         }
@@ -59,7 +61,7 @@ public final class Kkc implements NutsApplication {
                     }
                     case "-i":
                     case "--ignore-case": {
-                        NutsArgument a = commandline.nextBoolean().get();
+                        NArg a = commandline.nextFlag().get();
                         if (a.isActive()) {
                             options.insensitive = a.getBooleanValue().get();
                         }
@@ -67,7 +69,7 @@ public final class Kkc implements NutsApplication {
                     }
                     case "-m":
                     case "--monitor": {
-                        NutsArgument a = commandline.nextString().get();
+                        NArg a = commandline.nextEntry().get();
                         if (a.isActive()) {
                             options.monitor=a.getStringValue().get();
                         }
@@ -127,7 +129,7 @@ public final class Kkc implements NutsApplication {
                     }
                     case "-1":
                     case "--default-1": {
-                        NutsArgument a = commandline.nextBoolean().get();
+                        NArg a = commandline.nextFlag().get();
                         if (a.isActive()) {
                             if (a.getBooleanValue().get()) {
                                 options.diffFileOption.add(FileMode.FILE_NAME);
@@ -143,7 +145,7 @@ public final class Kkc implements NutsApplication {
                     }
                     case "-2":
                     case "--default-2": {
-                        NutsArgument a = commandline.nextBoolean().get();
+                        NArg a = commandline.nextFlag().get();
                         if (a.isActive()) {
                             if (a.getBooleanValue().get()) {
                                 options.diffFileOption.add(FileMode.FILE_NAME);
@@ -157,14 +159,14 @@ public final class Kkc implements NutsApplication {
                         return true;
                     }
                     case "--include": {
-                        NutsArgument a = commandline.nextString().get();
+                        NArg a = commandline.nextEntry().get();
                         if (a.isActive()) {
                             options.includedFileSets.add(a.getStringValue().get());
                         }
                         return true;
                     }
                     case "--exclude": {
-                        NutsArgument a = commandline.nextString().get();
+                        NArg a = commandline.nextEntry().get();
                         if (a.isActive()) {
                             options.excludedFileSets.add(a.getStringValue().get());
                         }
@@ -174,8 +176,8 @@ public final class Kkc implements NutsApplication {
                 return false;
             }
 
-            private void processFlag(NutsCommandLine commandline, FileMode flag) {
-                NutsArgument a = commandline.nextBoolean().get();
+            private void processFlag(NCmdLine commandline, FileMode flag) {
+                NArg a = commandline.nextFlag().get();
                 if (a.isActive()) {
                     if (a.getBooleanValue().get()) {
                         options.diffFileOption.add(flag);
@@ -186,18 +188,18 @@ public final class Kkc implements NutsApplication {
             }
 
             @Override
-            public boolean onCmdNextNonOption(NutsArgument nonOption, NutsCommandLine commandline, NutsApplicationContext context) {
-                options.includedFileSets.add(commandline.nextStringValueLiteral().get());
+            public boolean onCmdNextNonOption(NArg nonOption, NCmdLine commandline, NCmdLineContext context) {
+                options.includedFileSets.add(commandline.nextEntry().get().getStringValue().get());
                 return true;
             }
 
             @Override
-            public void onCmdExec(NutsCommandLine nutsCommandLine, NutsApplicationContext nutsApplicationContext) {
+            public void onCmdExec(NCmdLine nutsCommandLine, NCmdLineContext nutsApplicationContext) {
                 if (options.console == null || !options.console) {
-                    Kkw w = new Kkw(applicationContext);
+                    Kkw w = new Kkw(session);
                     w.showFrame();
                 } else {
-                    KifKif kifKif = new KifKif(options.diffFileOption.toArray(new FileMode[0]), applicationContext.getSession());
+                    KifKif kifKif = new KifKif(options.diffFileOption.toArray(new FileMode[0]), session);
                     kifKif.setCaseInsensitiveNames(options.insensitive);
                     for (String param : options.includedFileSets) {
                         kifKif.addIncludedFileSet(new DefaultFileSet(new File(param)));
@@ -207,12 +209,12 @@ public final class Kkc implements NutsApplication {
                     properties.put(ExportSupport.FILE_PROPERTY, options.file);
                     MessageSet resources = new MessageSet(LoggerProvider.DEFAULT);
                     resources.addBundle("net.thevpc.kifkif.lang.Kifkif");
-                    NutsProgressMonitor taskMonitor = createMon(options.monitor, applicationContext.getSession());
+                    NProgressMonitor taskMonitor = createMon(options.monitor, session);
                     SearchData fileDuplicates = kifKif.findDuplicates(taskMonitor);
                     fileDuplicates.setSelectedDuplicatesAuto();
                     TextExportSupport textExportSupport = new TextExportSupport();
                     try {
-                        textExportSupport.export(fileDuplicates, options.file == null ? System.out : null, properties);
+                        textExportSupport.export(fileDuplicates, options.file == null ? System.out : null, properties, session);
                     } catch (Exception e) {
                         e.printStackTrace();
                     }
@@ -231,13 +233,13 @@ public final class Kkc implements NutsApplication {
         List<String> excludedFileSets = new ArrayList<>();
     }
 
-    private NutsProgressMonitor createMon(String value, NutsSession session) {
-        NutsProgressMonitors m = NutsProgressMonitors.of(session);
+    private NProgressMonitor createMon(String value, NSession session) {
+        NProgressMonitors m = NProgressMonitors.of(session);
 
         if (value == null || value.isEmpty()) {
             return m.ofSilent();
-        } else if (NutsValue.of(value).isBoolean()) {
-            return NutsValue.of(value).asBoolean().get() ?
+        } else if (NLiteral.of(value).isBoolean()) {
+            return NLiteral.of(value).asBoolean().get() ?
                     m.ofLogger(500) : m.ofSilent();
         } else if (value.equals("always")) {
             return m.ofLogger();
@@ -252,7 +254,7 @@ public final class Kkc implements NutsApplication {
         } else if (value.matches("\\d{1,6}")) {
             return m.ofLogger(Integer.parseInt(value));
         } else {
-            throw new NutsIllegalArgumentException(session, NutsMessage.ofCstyle("Unknown monitor %s", value));
+            throw new NIllegalArgumentException(session, NMsg.ofC("Unknown monitor %s", value));
         }
     }
 

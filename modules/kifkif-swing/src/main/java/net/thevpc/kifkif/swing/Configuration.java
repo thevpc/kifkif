@@ -4,7 +4,7 @@
  */
 package net.thevpc.kifkif.swing;
 
-import net.thevpc.nuts.io.NutsPath;
+import net.thevpc.nuts.io.NPath;
 
 import java.io.*;
 import java.util.HashMap;
@@ -21,10 +21,10 @@ import java.util.logging.Logger;
 public class Configuration {
 
     private Map<String, String> properties = new HashMap<String, String>();
-    private NutsPath file;
+    private NPath file;
     private boolean autoSave;
 
-    public Configuration(NutsPath file, boolean autoSave) {
+    public Configuration(NPath file, boolean autoSave) {
         this.file = file;
         this.autoSave = autoSave;
         load();
@@ -49,7 +49,7 @@ public class Configuration {
     public boolean save() {
         Properties p = null;
         try {
-            NutsPath parent = file.getParent();
+            NPath parent = file.getParent();
             if (parent != null && !parent.exists()) {
                 parent.mkdirs();
             }

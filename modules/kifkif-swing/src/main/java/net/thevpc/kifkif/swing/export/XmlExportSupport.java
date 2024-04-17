@@ -3,6 +3,7 @@ package net.thevpc.kifkif.swing.export;
 import net.thevpc.kifkif.SearchData;
 import net.thevpc.kifkif.swing.Kkw;
 import net.thevpc.common.prs.xml.XmlUtils;
+import net.thevpc.nuts.NSession;
 
 import javax.swing.*;
 import java.io.File;
@@ -25,7 +26,7 @@ public class XmlExportSupport implements ExportSupport {
         return getClass().getSimpleName();
     }
 
-    public boolean export(SearchData searchData, OutputStream stream, Map<String, Object> properties) throws ExportException, IOException {
+    public boolean export(SearchData searchData, OutputStream stream, Map<String, Object> properties, NSession session) throws ExportException, IOException {
         Kkw kkw = ((properties == null) ? (Kkw) null : (Kkw) properties.get(ExportSupport.KKW_PROPERTY));
         File outFile = ((properties == null) ? (File) null : (File) properties.get(ExportSupport.FILE_PROPERTY));
         PrintStream out = null;

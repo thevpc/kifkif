@@ -1,6 +1,6 @@
 package net.thevpc.kifkif;
 
-import net.thevpc.nuts.util.NutsEnumSet;
+import net.thevpc.nuts.util.NEnumSet;
 
 public enum FileMode {
     /**
@@ -87,15 +87,15 @@ public enum FileMode {
     FOLDER_TIME_YEAR,
     FOLDER_TIME_MASK;
 
-    public NutsEnumSet<FileMode> add(FileMode other) {
-        return NutsEnumSet.of(this).add(other);
+    public NEnumSet<FileMode> add(FileMode other) {
+        return NEnumSet.of(this).add(other);
     }
 
-    public NutsEnumSet<FileMode> addAll(FileMode... other) {
-        return NutsEnumSet.of(this).addAll(other);
+    public NEnumSet<FileMode> addAll(FileMode... other) {
+        return NEnumSet.of(this).addAll(other);
     }
 
-    public NutsEnumSet<FileMode> addAll(NutsEnumSet<FileMode> other) {
-        return NutsEnumSet.of(this).addAll(other);
+    public NEnumSet<FileMode> addAll(NEnumSet<FileMode> other) {
+        return NEnumSet.of(this).addAll(other);
     }
 }

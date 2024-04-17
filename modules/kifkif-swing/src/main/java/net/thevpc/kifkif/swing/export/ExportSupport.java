@@ -5,6 +5,7 @@ import java.io.OutputStream;
 import java.util.Map;
 
 import net.thevpc.kifkif.SearchData;
+import net.thevpc.nuts.NSession;
 
 /**
  * @author vpc
@@ -16,5 +17,5 @@ public interface ExportSupport {
     public static final String FILE_PROPERTY = "File";
 
     public String getName();
-    public boolean export(SearchData searchData, OutputStream stream, Map<String, Object> properties) throws ExportException, IOException;
+    public boolean export(SearchData searchData, OutputStream stream, Map<String, Object> properties, NSession session) throws ExportException, IOException;
 }

@@ -4,12 +4,12 @@ import java.io.*;
 import java.util.*;
 
 import net.thevpc.kifkif.stamp.DefaultFilestamp;
-import net.thevpc.nuts.NutsMessage;
-import net.thevpc.nuts.NutsSession;
-import net.thevpc.nuts.util.NutsChronometer;
-import net.thevpc.nuts.util.NutsEnumSet;
-import net.thevpc.nuts.util.NutsProgressMonitor;
-import net.thevpc.nuts.util.NutsProgressMonitors;
+import net.thevpc.nuts.NSession;
+import net.thevpc.nuts.time.NChronometer;
+import net.thevpc.nuts.time.NProgressMonitor;
+import net.thevpc.nuts.time.NProgressMonitors;
+import net.thevpc.nuts.util.NEnumSet;
+import net.thevpc.nuts.util.NMsg;
 
 /**
  * Kikif Engine
@@ -48,7 +48,7 @@ public class KifKif implements Serializable, Cloneable {
     private List<FileSet> includedFileSet = new ArrayList<FileSet>();
 
 
-    private NutsEnumSet<FileMode> diffFileMode = NutsEnumSet.noneOf(FileMode.class);
+    private NEnumSet<FileMode> diffFileMode = NEnumSet.noneOf(FileMode.class);
     private boolean caseInsensitiveNames = true;
     private boolean showFolderDuplicates = true;
     private boolean showFileDuplicates = true;
@@ -61,16 +61,16 @@ public class KifKif implements Serializable, Cloneable {
     private transient SearchStatistics tempStatistics = new SearchStatistics();
 
     private SearchData searchData;
-    private NutsSession session;
-    private NutsProgressMonitors mons;
+    private NSession session;
+    private NProgressMonitors mons;
 
     /**
      * Simple Constructor
      * No initialization done.
      */
-    public KifKif(NutsSession session) {
+    public KifKif(NSession session) {
         this.session = session;
-        this.mons = NutsProgressMonitors.of(session);
+        this.mons = NProgressMonitors.of(session);
     }
 
     /**
@@ -78,7 +78,7 @@ public class KifKif implements Serializable, Cloneable {
      *
      * @param fileMode is one of the constants in FileDiffFactory
      */
-    public KifKif(FileMode[] fileMode, NutsSession session) {
+    public KifKif(FileMode[] fileMode, NSession session) {
         this.session = session;
         setFileMode(fileMode);
     }
@@ -279,10 +279,10 @@ public class KifKif implements Serializable, Cloneable {
     /**
      * remove all duplicate lists that does not contain more than a single file
      */
-    private void removeSingletons(NutsProgressMonitor progressMonitor) {
+    private void removeSingletons(NProgressMonitor progressMonitor) {
         chrono("removeSingletons", () -> {
-            NutsProgressMonitor[] split = progressMonitor.split(1, 1);
-            NutsProgressMonitor s1 = split[0].incremental(tempFileDuplicatesMap.size());
+            NProgressMonitor[] split = progressMonitor.split(1, 1);
+            NProgressMonitor s1 = split[0].incremental(tempFileDuplicatesMap.size());
             for (Iterator<DuplicateList> i = tempFileDuplicatesMap.values().iterator(); i.hasNext(); ) {
                 DuplicateList duplicateList = i.next();
                 int c = duplicateList.getFileCount();
@@ -298,7 +298,7 @@ public class KifKif implements Serializable, Cloneable {
             }
             s1.complete();
 
-            NutsProgressMonitor s2 = split[1].incremental(tempFolderDuplicatesMap.size());
+            NProgressMonitor s2 = split[1].incremental(tempFolderDuplicatesMap.size());
             int count = -1;
             while (true) {
                 s2.setProgress(0);
@@ -335,10 +335,10 @@ public class KifKif implements Serializable, Cloneable {
      * if they are already included in some duplcate folders
      *
      */
-    private void removeExpandedFiles(NutsProgressMonitor progressMonitor) {
+    private void removeExpandedFiles(NProgressMonitor progressMonitor) {
         FileParentLookup fl = new FileParentLookup(tempFolderToStampMap.keySet());
-        NutsProgressMonitor[] split = progressMonitor.split(5, 10);
-        NutsProgressMonitor s1 = split[0].incremental(tempFolderDuplicatesMap.size());
+        NProgressMonitor[] split = progressMonitor.split(5, 10);
+        NProgressMonitor s1 = split[0].incremental(tempFolderDuplicatesMap.size());
         for (Iterator<DuplicateList> i = tempFolderDuplicatesMap.values().iterator(); i.hasNext(); ) {
             DuplicateList folderDuplicates = i.next();
             for (Iterator<File> j = folderDuplicates.getFiles().iterator(); j.hasNext(); ) {
@@ -355,7 +355,7 @@ public class KifKif implements Serializable, Cloneable {
         }
         s1.complete();
 
-        NutsProgressMonitor s2 = split[1].incremental(tempFolderDuplicatesMap.size() * tempFileDuplicatesMap.size());
+        NProgressMonitor s2 = split[1].incremental(tempFolderDuplicatesMap.size() * tempFileDuplicatesMap.size());
         for (Iterator<DuplicateList> i = tempFolderDuplicatesMap.values().iterator(); i.hasNext(); ) {
             DuplicateList folderDuplicates = i.next();
             fl = new FileParentLookup(folderDuplicates.getFiles());
@@ -392,8 +392,8 @@ public class KifKif implements Serializable, Cloneable {
      * @param taskMonitor : the progress monitor
      * @return list of duplicates
      */
-    public SearchData findDuplicates(NutsProgressMonitor taskMonitor) {
-        taskMonitor = NutsProgressMonitors.of(session).of(taskMonitor);
+    public SearchData findDuplicates(NProgressMonitor taskMonitor) {
+        taskMonitor = NProgressMonitors.of(session).of(taskMonitor);
         tempFileDuplicatesMap = new Hashtable<Filestamp, DuplicateList>();
         tempFileToStampMap = new Hashtable<File, Filestamp>();
         tempFolderDuplicatesMap = new Hashtable<Filestamp, DuplicateList>();
@@ -403,7 +403,7 @@ public class KifKif implements Serializable, Cloneable {
         final Object[] PROGRESS_PARAMS = new Object[15];
         taskMonitor.reset();
         taskMonitor.start();
-        NutsProgressMonitor[] mons = taskMonitor.split(1, 3, 6, 3, 3, 1);
+        NProgressMonitor[] mons = taskMonitor.split(1, 3, 6, 3, 3, 1);
         processInit(PROGRESS_PARAMS, mons[0]);
         processFileTimestamps(PROGRESS_PARAMS, mons[1]);
         processFileContents(PROGRESS_PARAMS, mons[2]);
@@ -415,14 +415,14 @@ public class KifKif implements Serializable, Cloneable {
     }
 
     private void chrono(String name, Runnable r) {
-        session.out().printlnf("start %s", name);
-        NutsChronometer c = NutsChronometer.startNow();
+        session.out().println(NMsg.ofC("start %s", name));
+        NChronometer c = NChronometer.startNow();
         r.run();
         c.stop();
-        session.out().printlnf("%s %s", name, c);
+        session.out().println(NMsg.ofC("%s %s", name, c));
     }
 
-    private void processFinalize(Object[] progress_params, NutsProgressMonitor taskMonitor) {
+    private void processFinalize(Object[] progress_params, NProgressMonitor taskMonitor) {
         chrono("processFinalize", () -> {
             removeSingletons(taskMonitor);
             ArrayList<DuplicateList> v = new ArrayList<DuplicateList>();
@@ -445,16 +445,16 @@ public class KifKif implements Serializable, Cloneable {
         });
     }
 
-    private void processFolderContents(Object[] PROGRESS_PARAMS, NutsProgressMonitor taskMonitor) {
+    private void processFolderContents(Object[] PROGRESS_PARAMS, NProgressMonitor taskMonitor) {
         chrono("processFolderContents", () -> {
             if (folderContentComparator != null) {
-                NutsProgressMonitor[] split = taskMonitor.split(5, 2, 1);
+                NProgressMonitor[] split = taskMonitor.split(5, 2, 1);
                 ArrayList<DuplicateList> allNewSimiltudes = new ArrayList<DuplicateList>();
                 PROGRESS_PARAMS[FILES_COUNT] = tempFileToStampMap.size();
                 PROGRESS_PARAMS[FOLDERS_COUNT] = tempFolderToStampMap.size();
                 PROGRESS_PARAMS[DUP_FILES_COUNT] = tempFileDuplicatesMap.size();
                 PROGRESS_PARAMS[DUP_FOLDERS_COUNT] = tempFolderDuplicatesMap.size();
-                final NutsProgressMonitor next = split[0].incremental(tempFolderDuplicatesMap.size());
+                final NProgressMonitor next = split[0].incremental(tempFolderDuplicatesMap.size());
                 int index = 0;
                 for (Iterator<DuplicateList> it = tempFolderDuplicatesMap.values().iterator(); it.hasNext(); ) {
                     PROGRESS_PARAMS[FILES_COUNT] = tempFileToStampMap.size();
@@ -462,7 +462,7 @@ public class KifKif implements Serializable, Cloneable {
                     PROGRESS_PARAMS[DUP_FILES_COUNT] = tempFileDuplicatesMap.size();
                     PROGRESS_PARAMS[DUP_FOLDERS_COUNT] = tempFolderDuplicatesMap.size();
                     PROGRESS_PARAMS[INDEX] = ++index;
-                    next.inc(NutsMessage.ofCstyle("FolderContentItem %s", Arrays.asList(PROGRESS_PARAMS)));
+                    next.inc(NMsg.ofC("FolderContentItem %s", Arrays.asList(PROGRESS_PARAMS)));
                     DuplicateList duplicateList = it.next();
                     File[] files = duplicateList.getFiles().toArray(new File[duplicateList.getFileCount()]);
                     ArrayList<File> filesCopies = new ArrayList<File>();
@@ -521,14 +521,14 @@ public class KifKif implements Serializable, Cloneable {
         });
     }
 
-    private void processFolderTimestamps(Object[] PROGRESS_PARAMS, NutsProgressMonitor taskMonitor) {
+    private void processFolderTimestamps(Object[] PROGRESS_PARAMS, NProgressMonitor taskMonitor) {
         chrono("processFolderTimestamps", () -> {
             // ---------------  FOLDERS  -----------------------
             if (folderStampFilterList != null) {
                 int dmax = folderStampFilterList.getMaxLevels();
-                NutsProgressMonitor[] split = taskMonitor.split(dmax - 1);
+                NProgressMonitor[] split = taskMonitor.split(dmax - 1);
                 for (int d = 1; d < dmax; d++) {
-                    NutsProgressMonitor[] split2 = split[d - 1].split(5, 2);
+                    NProgressMonitor[] split2 = split[d - 1].split(5, 2);
                     Hashtable<Filestamp, DuplicateList> newHashtable = new Hashtable<Filestamp, DuplicateList>();
                     PROGRESS_PARAMS[FOLDER_FILTER_INDEX] = d;
                     FilestampFilter filestampFilter = folderStampFilterList.getFilestampFilter(d);
@@ -537,7 +537,7 @@ public class KifKif implements Serializable, Cloneable {
                     PROGRESS_PARAMS[FOLDERS_COUNT] = tempFolderToStampMap.size();
                     PROGRESS_PARAMS[DUP_FILES_COUNT] = tempFileDuplicatesMap.size();
                     PROGRESS_PARAMS[DUP_FOLDERS_COUNT] = tempFolderDuplicatesMap.size();
-                    final NutsProgressMonitor next = split2[0].incremental(tempFolderDuplicatesMap.size());
+                    final NProgressMonitor next = split2[0].incremental(tempFolderDuplicatesMap.size());
                     int index = 0;
                     for (DuplicateList duplicateList : tempFolderDuplicatesMap.values()) {
                         PROGRESS_PARAMS[FILES_COUNT] = tempFileToStampMap.size();
@@ -545,7 +545,7 @@ public class KifKif implements Serializable, Cloneable {
                         PROGRESS_PARAMS[DUP_FILES_COUNT] = tempFileDuplicatesMap.size();
                         PROGRESS_PARAMS[DUP_FOLDERS_COUNT] = tempFolderDuplicatesMap.size();
                         PROGRESS_PARAMS[INDEX] = ++index;
-                        next.inc(NutsMessage.ofCstyle("FolderstampItem %s", Arrays.asList(PROGRESS_PARAMS)));
+                        next.inc(NMsg.ofC("FolderstampItem %s", Arrays.asList(PROGRESS_PARAMS)));
                         for (File file : duplicateList.getFiles()) {
                             Filestamp filestamp = folderStampFilterList.getNextFilterSig(file, duplicateList.getFilestamp(), d, this);
                             DuplicateList newDuplicateList = newHashtable.get(filestamp);
@@ -568,9 +568,9 @@ public class KifKif implements Serializable, Cloneable {
         });
     }
 
-    private void processInit(Object[] PROGRESS_PARAMS, NutsProgressMonitor taskMonitor) {
+    private void processInit(Object[] PROGRESS_PARAMS, NProgressMonitor taskMonitor) {
         chrono("processInit", () -> {
-            NutsProgressMonitor[] split = taskMonitor.split(5, 2);
+            NProgressMonitor[] split = taskMonitor.split(5, 2);
             FileSetList li = new FileSetList(includedFileSet);
             PROGRESS_PARAMS[FILE_SET] = li;
             PROGRESS_PARAMS[FILE_FILTER_NAME] = (fileStampFilterList == null ? "" : String.valueOf(fileStampFilterList.getFilestampFilter(0)));
@@ -587,28 +587,28 @@ public class KifKif implements Serializable, Cloneable {
                 PROGRESS_PARAMS[INIT_FOLDERS_COUNT] = tempStatistics.sourceFoldersCount;
 //                    taskMonitor.inc("InitItem", PROGRESS_PARAMS);
                 registerFile(file);
-                split[0].setProgress(i.progressRatio(), NutsMessage.ofCstyle("InitItem %s", Arrays.asList(PROGRESS_PARAMS)));
+                split[0].setProgress(i.progressRatio(), NMsg.ofC("InitItem %s", Arrays.asList(PROGRESS_PARAMS)));
             }
             if (tempStatistics.sourceFilesCount == 0 && tempStatistics.sourceFoldersCount == 0) {
                 throw new IllegalArgumentException("Not Valid File set found");
             }
             split[0].complete();
             removeSingletons(split[1]);
-            taskMonitor.complete(NutsMessage.ofCstyle("InitItem %s", Arrays.asList(PROGRESS_PARAMS)));
+            taskMonitor.complete(NMsg.ofC("InitItem %s", Arrays.asList(PROGRESS_PARAMS)));
         });
     }
 
-    private void processFileContents(Object[] PROGRESS_PARAMS, NutsProgressMonitor taskMonitor) {
+    private void processFileContents(Object[] PROGRESS_PARAMS, NProgressMonitor taskMonitor) {
         chrono("processFileContents", () -> {
             if (fileContentComparator != null) {
-                NutsProgressMonitor[] split = taskMonitor.split(5, 1, 2);
+                NProgressMonitor[] split = taskMonitor.split(5, 1, 2);
 
                 ArrayList<DuplicateList> allNewSimilitudes = new ArrayList<DuplicateList>();
                 PROGRESS_PARAMS[FILES_COUNT] = tempFileToStampMap.size();
                 PROGRESS_PARAMS[FOLDERS_COUNT] = tempFolderToStampMap.size();
                 PROGRESS_PARAMS[DUP_FILES_COUNT] = tempFileDuplicatesMap.size();
                 PROGRESS_PARAMS[DUP_FOLDERS_COUNT] = tempFolderDuplicatesMap.size();
-                final NutsProgressMonitor next = split[0].incremental(tempFileDuplicatesMap.size());
+                final NProgressMonitor next = split[0].incremental(tempFileDuplicatesMap.size());
                 int index = 0;
                 for (Iterator<DuplicateList> it = tempFileDuplicatesMap.values().iterator(); it.hasNext(); ) {
                     PROGRESS_PARAMS[FILES_COUNT] = tempFileToStampMap.size();
@@ -616,7 +616,7 @@ public class KifKif implements Serializable, Cloneable {
                     PROGRESS_PARAMS[DUP_FILES_COUNT] = tempFileDuplicatesMap.size();
                     PROGRESS_PARAMS[DUP_FOLDERS_COUNT] = tempFolderDuplicatesMap.size();
                     PROGRESS_PARAMS[INDEX] = ++index;
-                    next.inc(NutsMessage.ofCstyle("FileContentItem %s", Arrays.asList(PROGRESS_PARAMS)));
+                    next.inc(NMsg.ofC("FileContentItem %s", Arrays.asList(PROGRESS_PARAMS)));
                     DuplicateList duplicateList = it.next();
 //                    System.out.println(">>>>> "+duplicateList);
                     File[] files = duplicateList.getFiles().toArray(new File[duplicateList.getFileCount()]);
@@ -663,7 +663,7 @@ public class KifKif implements Serializable, Cloneable {
                     }
                 }
                 split[0].complete();
-                NutsProgressMonitor s1 = split[1].incremental(allNewSimilitudes.size());
+                NProgressMonitor s1 = split[1].incremental(allNewSimilitudes.size());
                 for (DuplicateList duplicateList : allNewSimilitudes) {
 //                    System.out.println(">add "+duplicateList);
                     tempFileDuplicatesMap.put(duplicateList.getFilestamp(), duplicateList);
@@ -678,11 +678,11 @@ public class KifKif implements Serializable, Cloneable {
 //                taskMonitor.stepOut();
 //                System.out.println(">> fc.index "+taskMonitor.getIndex());
             }
-            taskMonitor.complete(NutsMessage.ofCstyle("processFileContents %s", Arrays.asList(PROGRESS_PARAMS)));
+            taskMonitor.complete(NMsg.ofC("processFileContents %s", Arrays.asList(PROGRESS_PARAMS)));
         });
     }
 
-    private void processFileTimestamps(Object[] PROGRESS_PARAMS, NutsProgressMonitor taskMonitor) {
+    private void processFileTimestamps(Object[] PROGRESS_PARAMS, NProgressMonitor taskMonitor) {
         chrono("processFileTimestamps", () -> {
             int max = fileStampFilterList.getMaxLevels();
             if (max == 0) {
@@ -692,10 +692,10 @@ public class KifKif implements Serializable, Cloneable {
             if (max < 0) {
                 throw new IllegalArgumentException("Not Valid File stamp found");
             }
-            NutsProgressMonitor[] split = taskMonitor.split(max - 1);
+            NProgressMonitor[] split = taskMonitor.split(max - 1);
             for (int d = 1; d < max; d++) {
-                NutsProgressMonitor[] split2 = split[d - 1].split(5, 2);
-                NutsProgressMonitor s0 = split2[0].incremental(tempFileDuplicatesMap.size());
+                NProgressMonitor[] split2 = split[d - 1].split(5, 2);
+                NProgressMonitor s0 = split2[0].incremental(tempFileDuplicatesMap.size());
                 Hashtable<Filestamp, DuplicateList> newHashtable = new Hashtable<Filestamp, DuplicateList>();
                 PROGRESS_PARAMS[FILE_FILTER_INDEX] = d;
                 PROGRESS_PARAMS[FILE_FILTER_NAME] = fileStampFilterList.getFilestampFilter(d).toString();
@@ -711,7 +711,7 @@ public class KifKif implements Serializable, Cloneable {
                     PROGRESS_PARAMS[DUP_FILES_COUNT] = tempFileDuplicatesMap.size();
                     PROGRESS_PARAMS[DUP_FOLDERS_COUNT] = tempFolderDuplicatesMap.size();
                     PROGRESS_PARAMS[INDEX] = ++index;
-                    s0.inc(NutsMessage.ofCstyle("FilestampItem %s", Arrays.asList(PROGRESS_PARAMS)));
+                    s0.inc(NMsg.ofC("FilestampItem %s", Arrays.asList(PROGRESS_PARAMS)));
                     for (File file : duplicateList.getFiles()) {
                         Filestamp filestamp = fileStampFilterList.getNextFilterSig(file, duplicateList.getFilestamp(), d, this);
                         DuplicateList newDuplicateList = newHashtable.get(filestamp);
@@ -824,7 +824,7 @@ public class KifKif implements Serializable, Cloneable {
      * @param folderContentComparator
      */
     public void setFolderContentComparator(FileContentComparator folderContentComparator) {
-        this.diffFileMode = NutsEnumSet.noneOf(FileMode.class);
+        this.diffFileMode = NEnumSet.noneOf(FileMode.class);
         this.folderContentComparator = folderContentComparator;
     }
 
@@ -843,7 +843,7 @@ public class KifKif implements Serializable, Cloneable {
      * @param folderFilterList
      */
     public void setFolderStampFilterList(FileStampFilterList folderFilterList) {
-        this.diffFileMode = NutsEnumSet.noneOf(FileMode.class);
+        this.diffFileMode = NEnumSet.noneOf(FileMode.class);
         this.folderStampFilterList = folderFilterList;
     }
 
@@ -860,7 +860,7 @@ public class KifKif implements Serializable, Cloneable {
      * @param fileContentComparator
      */
     public void setFileContentComparator(FileContentComparator fileContentComparator) {
-        this.diffFileMode = NutsEnumSet.noneOf(FileMode.class);
+        this.diffFileMode = NEnumSet.noneOf(FileMode.class);
         this.fileContentComparator = fileContentComparator;
     }
 
@@ -874,7 +874,7 @@ public class KifKif implements Serializable, Cloneable {
     }
 
     public void setFileStampFilterList(FileStampFilterList fileStampFilterList) {
-        this.diffFileMode = NutsEnumSet.noneOf(FileMode.class);
+        this.diffFileMode = NEnumSet.noneOf(FileMode.class);
         this.fileStampFilterList = fileStampFilterList;
     }
 
@@ -884,7 +884,7 @@ public class KifKif implements Serializable, Cloneable {
      *
      * @return the used Diff mode or FileDiffFactory
      */
-    public NutsEnumSet<FileMode> getDiffFileMode() {
+    public NEnumSet<FileMode> getDiffFileMode() {
         return diffFileMode;
     }
 
@@ -924,12 +924,12 @@ public class KifKif implements Serializable, Cloneable {
      * updates filters and comparators according to the given mode
      * see FileDiffFactory for available modes
      */
-    public void setFileMode(NutsEnumSet<FileMode> fileModes) {
+    public void setFileMode(NEnumSet<FileMode> fileModes) {
         setFileMode(fileModes.toArray());
     }
 
     public void setFileMode(FileMode... fileModes) {
-        this.diffFileMode = NutsEnumSet.of(Arrays.asList(fileModes), FileMode.class);
+        this.diffFileMode = NEnumSet.of(Arrays.asList(fileModes), FileMode.class);
         if (diffFileMode.isEmpty()) {
             diffFileMode = diffFileMode.add(FileMode.FILE_NAME);
             diffFileMode = diffFileMode.add(FileMode.FILE_SIZE);

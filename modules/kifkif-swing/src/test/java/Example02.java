@@ -12,7 +12,7 @@ import java.util.Iterator;
 import java.util.List;
 import net.thevpc.kifkif.stamp.FileNameStampFilter;
 import net.thevpc.nuts.Nuts;
-import net.thevpc.nuts.NutsSession;
+import net.thevpc.nuts.NSession;
 
 /**
  * this example prents two different manners to define File filters
@@ -25,7 +25,7 @@ import net.thevpc.nuts.NutsSession;
  */
 public class Example02 {
     public static void main(String[] args) {
-        NutsSession session = Nuts.openWorkspace("--sandbox", "-y");
+        NSession session = Nuts.openWorkspace("--sandbox", "-y");
         KifKif kifKif = new KifKif(session);
 
         // ********************************
@@ -87,7 +87,7 @@ public class Example02 {
         System.out.println("************************************* ");
         TextExportSupport textExportSupport = new TextExportSupport();
         try {
-            textExportSupport.export(searchData, System.out, null);
+            textExportSupport.export(searchData, System.out, null, session);
         } catch (ExportException e) {
             System.out.println("Export Exception : ");
             e.printStackTrace();

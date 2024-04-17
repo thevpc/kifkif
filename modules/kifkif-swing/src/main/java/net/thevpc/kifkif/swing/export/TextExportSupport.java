@@ -4,16 +4,17 @@ import java.io.File;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PrintStream;
+import java.time.temporal.ChronoUnit;
 import java.util.Collection;
 import java.util.Map;
 
 import javax.swing.JFileChooser;
 
-import net.thevpc.common.time.DatePart;
-import net.thevpc.common.time.TimeDuration;
 import net.thevpc.kifkif.DuplicateList;
 import net.thevpc.kifkif.SearchData;
 import net.thevpc.kifkif.swing.Kkw;
+import net.thevpc.nuts.NSession;
+import net.thevpc.nuts.time.NDuration;
 
 /**
  * @author vpc
@@ -25,11 +26,11 @@ public class TextExportSupport implements ExportSupport {
     public TextExportSupport() {
     }
 
-    public String getName(){
+    public String getName() {
         return getClass().getSimpleName();
     }
 
-    public boolean export(SearchData searchData, OutputStream stream, Map<String, Object> properties) throws ExportException, IOException {
+    public boolean export(SearchData searchData, OutputStream stream, Map<String, Object> properties, NSession session) throws ExportException, IOException {
         Kkw kkw = ((properties == null) ? (Kkw) null : (Kkw) properties.get(ExportSupport.KKW_PROPERTY));
         File outFile = ((properties == null) ? (File) null : (File) properties.get(ExportSupport.FILE_PROPERTY));
         PrintStream out = null;
@@ -46,8 +47,8 @@ public class TextExportSupport implements ExportSupport {
             }
         } else {
             JFileChooser chooser = new JFileChooser();
-            String old=kkw.getConfiguration().getString("TextExportSupport.selected");
-            if(old!=null){
+            String old = kkw.getConfiguration().getString("TextExportSupport.selected");
+            if (old != null) {
                 chooser.setSelectedFile(new File(old));
             }
             if (searchData.getDuplicateLists().size() > 0 && JFileChooser.APPROVE_OPTION == chooser.showSaveDialog(kkw == null ? null : kkw.getMainPanel())) {
@@ -56,9 +57,9 @@ public class TextExportSupport implements ExportSupport {
                     f = new File(f.getPath() + ".txt");
                 }
                 try {
-                    kkw.getConfiguration().setString("TextExportSupport.selected",f.getCanonicalPath());
+                    kkw.getConfiguration().setString("TextExportSupport.selected", f.getCanonicalPath());
                 } catch (IOException e) {
-                    kkw.getConfiguration().setString("TextExportSupport.selected",f.getAbsolutePath());
+                    kkw.getConfiguration().setString("TextExportSupport.selected", f.getAbsolutePath());
                 }
                 out = new PrintStream(f);
                 shouldCloseStream = true;
@@ -92,20 +93,20 @@ public class TextExportSupport implements ExportSupport {
                 }
             }
             String elapsedTime =
-                    TimeDuration.ofMillis(searchData.getStatistics().getStatsElapsedTimeMillis())
-                                    .format(DatePart.SECOND)
-                    ;
+                    NDuration.ofMillis(searchData.getStatistics().getStatsElapsedTimeMillis())
+                            .withSmallestUnit(ChronoUnit.SECONDS)
+                            .format(session).filteredText();
             out.printf("-------------------\n" +
-                    "STATISTICS:\n" +
-                    " Exec time : %s\n" +
-                    " Source : %d folder(s) and %d file(s)\n" +
-                    " Folder Groups : %d ; File Groups : %d\n" +
-                    " Total Duplicates  : %d\n" +
-                    " Folder Duplicates : %d\n" +
-                    " File Duplicates   : %d\n" +
-                    "\n" +
-                    "N.B. files with (*) are duplicate and could safely be deleted\n" +
-                    "N.B. files with (**) are already included in duplicate folders and could safely be deleted",
+                            "STATISTICS:\n" +
+                            " Exec time : %s\n" +
+                            " Source : %d folder(s) and %d file(s)\n" +
+                            " Folder Groups : %d ; File Groups : %d\n" +
+                            " Total Duplicates  : %d\n" +
+                            " Folder Duplicates : %d\n" +
+                            " File Duplicates   : %d\n" +
+                            "\n" +
+                            "N.B. files with (*) are duplicate and could safely be deleted\n" +
+                            "N.B. files with (**) are already included in duplicate folders and could safely be deleted",
                     String.valueOf(elapsedTime),
                     searchData.getStatistics().getSourceFoldersCount(),
                     searchData.getStatistics().getSourceFilesCount(),
