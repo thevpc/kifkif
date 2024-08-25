@@ -50,6 +50,7 @@ import net.thevpc.common.swing.prs.PRSManager;
 import net.thevpc.nuts.NSession;
 import net.thevpc.nuts.time.NProgressMonitors;
 import net.thevpc.nuts.util.NEnumSet;
+import net.thevpc.nuts.util.NOptional;
 import net.thevpc.swing.plaf.UIPlafManager;
 
 /**
@@ -223,8 +224,9 @@ public class Kkw implements ResourceSetHolder {
 
     public Kkw(NSession session) {
         this.session = session;
-        if (this.session.getLocale() != null) {
-            Locale locale = new Locale(this.session.getLocale());
+        String locale1 = this.session.getLocale().orNull();
+        if (locale1 != null) {
+            Locale locale = new Locale(locale1);
             Locale.setDefault(locale);
             LocaleManager.getInstance().setLocale(locale);
         }

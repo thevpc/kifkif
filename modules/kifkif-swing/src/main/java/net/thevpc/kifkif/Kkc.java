@@ -13,7 +13,7 @@ import net.thevpc.nuts.*;
 import net.thevpc.nuts.cmdline.NArg;
 import net.thevpc.nuts.cmdline.NCmdLine;
 import net.thevpc.nuts.cmdline.NCmdLineContext;
-import net.thevpc.nuts.cmdline.NCmdLineProcessor;
+import net.thevpc.nuts.cmdline.NCmdLineRunner;
 import net.thevpc.nuts.time.NProgressMonitor;
 import net.thevpc.nuts.time.NProgressMonitors;
 import net.thevpc.nuts.util.NLiteral;
@@ -37,15 +37,15 @@ public final class Kkc implements NApplication {
     @Override
     public void run(NSession session) {
         Kkc kkc = new Kkc();
-        session.processAppCmdLine(new NCmdLineProcessor() {
+        session.runAppCmdLine(new NCmdLineRunner() {
             Options options = new Options();
 
             @Override
-            public boolean onCmdNextOption(NArg option, NCmdLine commandline, NCmdLineContext context) {
+            public boolean nextOption(NArg option, NCmdLine cmdLine, NCmdLineContext context) {
                 switch (option.key()) {
                     case "-c":
                     case "--console": {
-                        NArg a = commandline.nextFlag().get();
+                        NArg a = cmdLine.nextFlag().get();
                         if (a.isActive()) {
                             options.console = a.getBooleanValue().get();
                         }
@@ -53,7 +53,7 @@ public final class Kkc implements NApplication {
                     }
                     case "-o":
                     case "--output": {
-                        NArg a = commandline.nextEntry().get();
+                        NArg a = cmdLine.nextEntry().get();
                         if (a.isActive()) {
                             options.file=(a.getStringValue().get());
                         }
@@ -61,7 +61,7 @@ public final class Kkc implements NApplication {
                     }
                     case "-i":
                     case "--ignore-case": {
-                        NArg a = commandline.nextFlag().get();
+                        NArg a = cmdLine.nextFlag().get();
                         if (a.isActive()) {
                             options.insensitive = a.getBooleanValue().get();
                         }
@@ -69,7 +69,7 @@ public final class Kkc implements NApplication {
                     }
                     case "-m":
                     case "--monitor": {
-                        NArg a = commandline.nextEntry().get();
+                        NArg a = cmdLine.nextEntry().get();
                         if (a.isActive()) {
                             options.monitor=a.getStringValue().get();
                         }
@@ -77,59 +77,59 @@ public final class Kkc implements NApplication {
                     }
                     case "--fc":
                     case "--file-content": {
-                        processFlag(commandline, FileMode.FILE_CONTENT);
+                        processFlag(cmdLine, FileMode.FILE_CONTENT);
                         return true;
                     }
                     case "--dc":
                     case "--dir-content": {
-                        processFlag(commandline, FileMode.FOLDER_CONTENT);
+                        processFlag(cmdLine, FileMode.FOLDER_CONTENT);
                         return true;
                     }
                     case "--fh":
                     case "--file-checksum": {
-                        processFlag(commandline, FileMode.FILE_STAMP);
+                        processFlag(cmdLine, FileMode.FILE_STAMP);
                         return true;
                     }
                     case "--dh":
                     case "--dir-checksum": {
-                        processFlag(commandline, FileMode.FOLDER_STAMP);
+                        processFlag(cmdLine, FileMode.FOLDER_STAMP);
                         return true;
                     }
                     case "--ft":
                     case "--file-time": {
-                        processFlag(commandline, FileMode.FILE_TIME);
+                        processFlag(cmdLine, FileMode.FILE_TIME);
                         return true;
                     }
                     case "--dt":
                     case "--dir-time": {
-                        processFlag(commandline, FileMode.FOLDER_TIME);
+                        processFlag(cmdLine, FileMode.FOLDER_TIME);
                         return true;
                     }
 
                     case "--fs":
                     case "--file-size": {
-                        processFlag(commandline, FileMode.FILE_SIZE);
+                        processFlag(cmdLine, FileMode.FILE_SIZE);
                         return true;
                     }
                     case "--ds":
                     case "--dir-size": {
-                        processFlag(commandline, FileMode.FOLDER_SIZE);
+                        processFlag(cmdLine, FileMode.FOLDER_SIZE);
                         return true;
                     }
 
                     case "--fn":
                     case "--file-name": {
-                        processFlag(commandline, FileMode.FILE_NAME);
+                        processFlag(cmdLine, FileMode.FILE_NAME);
                         return true;
                     }
                     case "--dn":
                     case "--dir-name": {
-                        processFlag(commandline, FileMode.FOLDER_NAME);
+                        processFlag(cmdLine, FileMode.FOLDER_NAME);
                         return true;
                     }
                     case "-1":
                     case "--default-1": {
-                        NArg a = commandline.nextFlag().get();
+                        NArg a = cmdLine.nextFlag().get();
                         if (a.isActive()) {
                             if (a.getBooleanValue().get()) {
                                 options.diffFileOption.add(FileMode.FILE_NAME);
@@ -145,7 +145,7 @@ public final class Kkc implements NApplication {
                     }
                     case "-2":
                     case "--default-2": {
-                        NArg a = commandline.nextFlag().get();
+                        NArg a = cmdLine.nextFlag().get();
                         if (a.isActive()) {
                             if (a.getBooleanValue().get()) {
                                 options.diffFileOption.add(FileMode.FILE_NAME);
@@ -159,14 +159,14 @@ public final class Kkc implements NApplication {
                         return true;
                     }
                     case "--include": {
-                        NArg a = commandline.nextEntry().get();
+                        NArg a = cmdLine.nextEntry().get();
                         if (a.isActive()) {
                             options.includedFileSets.add(a.getStringValue().get());
                         }
                         return true;
                     }
                     case "--exclude": {
-                        NArg a = commandline.nextEntry().get();
+                        NArg a = cmdLine.nextEntry().get();
                         if (a.isActive()) {
                             options.excludedFileSets.add(a.getStringValue().get());
                         }
@@ -188,13 +188,13 @@ public final class Kkc implements NApplication {
             }
 
             @Override
-            public boolean onCmdNextNonOption(NArg nonOption, NCmdLine commandline, NCmdLineContext context) {
-                options.includedFileSets.add(commandline.nextEntry().get().getStringValue().get());
+            public boolean nextNonOption(NArg nonOption, NCmdLine cmdLine, NCmdLineContext context) {
+                options.includedFileSets.add(cmdLine.nextEntry().get().getStringValue().get());
                 return true;
             }
 
             @Override
-            public void onCmdExec(NCmdLine nutsCommandLine, NCmdLineContext nutsApplicationContext) {
+            public void run(NCmdLine cmdLine, NCmdLineContext context) {
                 if (options.console == null || !options.console) {
                     Kkw w = new Kkw(session);
                     w.showFrame();
