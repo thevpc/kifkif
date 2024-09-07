@@ -6,7 +6,7 @@
     <groupId>net.thevpc.kifkif</groupId>
     <artifactId>kifkif</artifactId>
     <name>net.thevpc.kifkif.kifkif</name>
-    <version>1.3.4</version>
+    <version>1.3.5</version>
     <packaging>jar</packaging>
     <url>https://github.com/thevpc/kifkif</url>
     <organization>
@@ -90,7 +90,7 @@
         <dependency>
             <groupId>net.thevpc.kifkif</groupId>
             <artifactId>kifkif-core</artifactId>
-            <version>1.3.4</version>
+            <version>1.3.5</version>
         </dependency>
     </dependencies>
     <build>
