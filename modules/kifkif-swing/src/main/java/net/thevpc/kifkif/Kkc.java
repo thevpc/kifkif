@@ -35,9 +35,8 @@ public final class Kkc implements NApplication {
     }
 
     @Override
-    public void run(NSession session) {
-        Kkc kkc = new Kkc();
-        session.runAppCmdLine(new NCmdLineRunner() {
+    public void run() {
+        NApp.of().processCmdLine(new NCmdLineRunner() {
             Options options = new Options();
 
             @Override
@@ -196,10 +195,10 @@ public final class Kkc implements NApplication {
             @Override
             public void run(NCmdLine cmdLine, NCmdLineContext context) {
                 if (options.console == null || !options.console) {
-                    Kkw w = new Kkw(session);
+                    Kkw w = new Kkw();
                     w.showFrame();
                 } else {
-                    KifKif kifKif = new KifKif(options.diffFileOption.toArray(new FileMode[0]), session);
+                    KifKif kifKif = new KifKif(options.diffFileOption.toArray(new FileMode[0]));
                     kifKif.setCaseInsensitiveNames(options.insensitive);
                     for (String param : options.includedFileSets) {
                         kifKif.addIncludedFileSet(new DefaultFileSet(new File(param)));
@@ -209,12 +208,12 @@ public final class Kkc implements NApplication {
                     properties.put(ExportSupport.FILE_PROPERTY, options.file);
                     MessageSet resources = new MessageSet(LoggerProvider.DEFAULT);
                     resources.addBundle("net.thevpc.kifkif.lang.Kifkif");
-                    NProgressMonitor taskMonitor = createMon(options.monitor, session);
+                    NProgressMonitor taskMonitor = createMon(options.monitor);
                     SearchData fileDuplicates = kifKif.findDuplicates(taskMonitor);
                     fileDuplicates.setSelectedDuplicatesAuto();
                     TextExportSupport textExportSupport = new TextExportSupport();
                     try {
-                        textExportSupport.export(fileDuplicates, options.file == null ? System.out : null, properties, session);
+                        textExportSupport.export(fileDuplicates, options.file == null ? System.out : null, properties);
                     } catch (Exception e) {
                         e.printStackTrace();
                     }
@@ -233,8 +232,8 @@ public final class Kkc implements NApplication {
         List<String> excludedFileSets = new ArrayList<>();
     }
 
-    private NProgressMonitor createMon(String value, NSession session) {
-        NProgressMonitors m = NProgressMonitors.of(session);
+    private NProgressMonitor createMon(String value) {
+        NProgressMonitors m = NProgressMonitors.of();
 
         if (value == null || value.isEmpty()) {
             return m.ofSilent();
@@ -254,7 +253,7 @@ public final class Kkc implements NApplication {
         } else if (value.matches("\\d{1,6}")) {
             return m.ofLogger(Integer.parseInt(value));
         } else {
-            throw new NIllegalArgumentException(session, NMsg.ofC("Unknown monitor %s", value));
+            throw new NIllegalArgumentException( NMsg.ofC("Unknown monitor %s", value));
         }
     }
 

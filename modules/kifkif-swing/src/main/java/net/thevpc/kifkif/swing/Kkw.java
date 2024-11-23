@@ -47,10 +47,10 @@ import net.thevpc.common.prs.log.LoggerProvider;
 import net.thevpc.common.prs.locale.LocaleManager;
 import net.thevpc.common.swing.prs.ComponentResourcesUpdater;
 import net.thevpc.common.swing.prs.PRSManager;
+import net.thevpc.nuts.NApp;
 import net.thevpc.nuts.NSession;
 import net.thevpc.nuts.time.NProgressMonitors;
 import net.thevpc.nuts.util.NEnumSet;
-import net.thevpc.nuts.util.NOptional;
 import net.thevpc.swing.plaf.UIPlafManager;
 
 /**
@@ -218,19 +218,20 @@ public class Kkw implements ResourceSetHolder {
     private LaunchPalette launchPalette;
     private Configuration configuration;
     private boolean processing;
-    private NSession session;
     private Collection<Action> actions = new ArrayList<Action>();
     private transient PropertyChangeSupport support;
 
-    public Kkw(NSession session) {
-        this.session = session;
-        String locale1 = this.session.getLocale().orNull();
+    public Kkw() {
+        NSession session = NSession.get();
+        SwingUtilities.invokeLater(()->session.getWorkspace().setSharedInstance());
+
+        String locale1 = session.getLocale().orNull();
         if (locale1 != null) {
             Locale locale = new Locale(locale1);
             Locale.setDefault(locale);
             LocaleManager.getInstance().setLocale(locale);
         }
-        this.kifKif = new KifKif(this.session);
+        this.kifKif = new KifKif();
         UIPlafManager.getCurrentManager().apply("FlatDark");
         LocaleManager.getInstance().registerLocale(BOOT_LOCALE);
         LocaleManager.getInstance().registerLocale(Locale.ENGLISH);
@@ -238,7 +239,7 @@ public class Kkw implements ResourceSetHolder {
         LocaleManager.getInstance().registerLocale(Locale.ITALIAN);
         LocaleManager.getInstance().registerLocale(new Locale("ar"));
         try {
-            configuration = new Configuration(session.getAppConfFolder().resolve("kkw.xml"), true);
+            configuration = new Configuration(NApp.of().getConfFolder().resolve("kkw.xml"), true);
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -278,7 +279,7 @@ public class Kkw implements ResourceSetHolder {
         startButton.putClientProperty("showText", Boolean.TRUE);
         stopButton = PRSManager.createButton("stopButton");
         stopButton.putClientProperty("showText", Boolean.TRUE);
-        statusbar = new StatusbarTaskMonitor(session);
+        statusbar = new StatusbarTaskMonitor();
 
         statsSrcFoldersCountLabel = PRSManager.createLabel("statsSrcFoldersCountLabel");
         statsSrcFilesCountLabel = PRSManager.createLabel("statsSrcFilesCountLabel");
@@ -508,7 +509,7 @@ public class Kkw implements ResourceSetHolder {
                             ExportSupport exportSupport = (ExportSupport) ((JComponent) e.getSource()).getClientProperty("ExportSupport");
                             HashMap<String, Object> hashMap = new HashMap<String, Object>();
                             hashMap.put(ExportSupport.KKW_PROPERTY, Kkw.this);
-                            exportSupport.export(getResultTree().getSearchData(), null, hashMap, session);
+                            exportSupport.export(getResultTree().getSearchData(), null, hashMap);
                         } catch (Exception e1) {
                             JOptionPane.showMessageDialog(getMainPanel(),
                                     getResources().get2("msg.ResultExport.Exception", e1.getMessage()),
@@ -535,7 +536,6 @@ public class Kkw implements ResourceSetHolder {
         }
         return menuBar;
     }
-
 
     private void showAbout() {
         JOptionPane.showMessageDialog(getMainPanel(), new AboutPanel(), "About", JOptionPane.INFORMATION_MESSAGE);
@@ -726,7 +726,7 @@ public class Kkw implements ResourceSetHolder {
         }
     }
 
-    private void updateModelFromView() throws ParseException {
+    private void updateModelFromView() {
         NEnumSet<FileMode> fileOption = NEnumSet.noneOf(FileMode.class);
         fileOption = fileOption.add((optionFileNameCheck.isSelected()) ? FileMode.FILE_NAME : null);
         fileOption = fileOption.add((optionFileExtensionCheck.isSelected()) ? FileMode.FILE_EXTENSION : null);
@@ -804,10 +804,18 @@ public class Kkw implements ResourceSetHolder {
             );
         } else if (filterFileTimeBetweenCheck.isSelected() && filterFileTimeBetweenCheck.isEnabled()) {
             if (filterFileTimeBetweenText.getText().length() > 0) {
-                allFoldersFilter.setMinFileLastModifiedTime(dateFormat.parse(filterFileTimeBetweenText.getText()).getTime());
+                try {
+                    allFoldersFilter.setMinFileLastModifiedTime(dateFormat.parse(filterFileTimeBetweenText.getText()).getTime());
+                } catch (ParseException e) {
+                    throw new RuntimeException(e);
+                }
             }
             if (filterFileTimeAndText.getText().length() > 0) {
-                allFoldersFilter.setMaxFileLastModifiedTime(dateFormat.parse(filterFileTimeAndText.getText()).getTime());
+                try {
+                    allFoldersFilter.setMaxFileLastModifiedTime(dateFormat.parse(filterFileTimeAndText.getText()).getTime());
+                } catch (ParseException e) {
+                    throw new RuntimeException(e);
+                }
             }
         }
         FileSet[] includedFileSets = kifKif.getIncludedFileSets();
@@ -840,7 +848,7 @@ public class Kkw implements ResourceSetHolder {
         setProcessing(true);
         try {
             resultTree.clear();
-            SearchData searchData = kifKif.findDuplicates(NProgressMonitors.of(session).of(statusbar));
+            SearchData searchData = kifKif.findDuplicates(NProgressMonitors.of().of(statusbar));
             if (getConfiguration().getBoolean(KkwOptionDialog.OPTION_AUTO_MARK_FILES_TO_DELETE, false)) {
                 searchData.setSelectedDuplicatesAuto();
             }
@@ -1098,47 +1106,13 @@ public class Kkw implements ResourceSetHolder {
 
         addIncludeFolderButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
-                JFileChooser fileChooser = new JFileChooser();
-                fileChooser.setFileSelectionMode(JFileChooser.FILES_AND_DIRECTORIES);
-                fileChooser.setMultiSelectionEnabled(true);
-                String old = configuration.getString("LatestFolder");
-                File oldFile = old == null ? null : new File(old);
-                if (oldFile != null && oldFile.exists()) {
-                    fileChooser.setSelectedFile(oldFile);
-                    fileChooser.setCurrentDirectory(new File(old).getParentFile());
-                }
-                fileChooser.setLocale(currentLocale);
-                if (JFileChooser.APPROVE_OPTION == fileChooser.showOpenDialog(mainPanel)) {
-                    File[] selectedFiles = fileChooser.getSelectedFiles();
-                    addIncludeFiles(selectedFiles, -1);
-                }
+                onAddIncludedFolderButtonClicked();
             }
         });
 
         addExcludedFolderButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
-                JFileChooser fileChooser = new JFileChooser();
-                fileChooser.setFileSelectionMode(JFileChooser.FILES_AND_DIRECTORIES);
-                fileChooser.setMultiSelectionEnabled(true);
-                String old = configuration.getString("LatestFolder");
-                File oldFile = old == null ? null : new File(old);
-                if (oldFile != null && oldFile.exists()) {
-                    fileChooser.setSelectedFile(oldFile);
-                    fileChooser.setCurrentDirectory(new File(old).getParentFile());
-                }
-                fileChooser.setLocale(currentLocale);
-                if (JFileChooser.APPROVE_OPTION == fileChooser.showOpenDialog(mainPanel)) {
-                    File[] selectedFiles = fileChooser.getSelectedFiles();
-                    if (selectedFiles.length > 0) {
-                        if (selectedFiles.length > 0) {
-                            configuration.setString("LatestFolder", selectedFiles[0].getPath());
-                            final ArrayList<File> excludedFolders = ((DefaultFileFilter) kifKif.getGlobalFileFilter()).getExcludedFolders();
-                            excludedFolders.addAll(Arrays.asList(selectedFiles));
-                            SelectedFoldersTableModel model = (SelectedFoldersTableModel) selectedFolders.getModel();
-                            model.fireTableDataChanged();
-                        }
-                    }
-                }
+                onExcludedFolderButtonClicked();
             }
         });
 
@@ -1151,6 +1125,48 @@ public class Kkw implements ResourceSetHolder {
             }
         });
         return p;
+    }
+
+    private void onAddIncludedFolderButtonClicked() {
+        JFileChooser fileChooser = new JFileChooser();
+        fileChooser.setFileSelectionMode(JFileChooser.FILES_AND_DIRECTORIES);
+        fileChooser.setMultiSelectionEnabled(true);
+        String old = configuration.getString("LatestFolder");
+        File oldFile = old == null ? null : new File(old);
+        if (oldFile != null && oldFile.exists()) {
+            fileChooser.setSelectedFile(oldFile);
+            fileChooser.setCurrentDirectory(new File(old).getParentFile());
+        }
+        fileChooser.setLocale(currentLocale);
+        if (JFileChooser.APPROVE_OPTION == fileChooser.showOpenDialog(mainPanel)) {
+            File[] selectedFiles = fileChooser.getSelectedFiles();
+            addIncludeFiles(selectedFiles, -1);
+        }
+    }
+
+    private void onExcludedFolderButtonClicked() {
+        JFileChooser fileChooser = new JFileChooser();
+        fileChooser.setFileSelectionMode(JFileChooser.FILES_AND_DIRECTORIES);
+        fileChooser.setMultiSelectionEnabled(true);
+        String old = configuration.getString("LatestFolder");
+        File oldFile = old == null ? null : new File(old);
+        if (oldFile != null && oldFile.exists()) {
+            fileChooser.setSelectedFile(oldFile);
+            fileChooser.setCurrentDirectory(new File(old).getParentFile());
+        }
+        fileChooser.setLocale(currentLocale);
+        if (JFileChooser.APPROVE_OPTION == fileChooser.showOpenDialog(mainPanel)) {
+            File[] selectedFiles = fileChooser.getSelectedFiles();
+            if (selectedFiles.length > 0) {
+                if (selectedFiles.length > 0) {
+                    configuration.setString("LatestFolder", selectedFiles[0].getPath());
+                    final ArrayList<File> excludedFolders = ((DefaultFileFilter) kifKif.getGlobalFileFilter()).getExcludedFolders();
+                    excludedFolders.addAll(Arrays.asList(selectedFiles));
+                    SelectedFoldersTableModel model = (SelectedFoldersTableModel) selectedFolders.getModel();
+                    model.fireTableDataChanged();
+                }
+            }
+        }
     }
 
     private void addIncludeFiles(String[] selectedFiles, int row) {
@@ -1305,7 +1321,6 @@ public class Kkw implements ResourceSetHolder {
     }
 
     private void init() {
-
         ButtonGroup lastmodifiedGroup = new ButtonGroup();
         lastmodifiedGroup.add(filterFileTimeBetweenCheck);
         lastmodifiedGroup.add(filterFileTimeDuringCheck);
@@ -1436,11 +1451,9 @@ public class Kkw implements ResourceSetHolder {
         optionFileContentIgnoreWhitesCheck.setEnabled(optionFileContentCheck.isEnabled() && optionFileContentCheck.isSelected());
         optionFileTimeCombo.setEnabled(optionFileTimeCheck.isEnabled() && optionFileTimeCheck.isSelected());
         optionFolderTimeCombo.setEnabled(optionFolderTimeCheck.isEnabled() && optionFolderTimeCheck.isSelected());
-
     }
 
     private void updateResources() {
-
         PRSManager.applyOrientation(getMainPanel());
         PRSManager.applyOrientation(getMainFrame());
         PRSManager.update(actions, getMainPanel(), resources, getIconSet());
@@ -1596,7 +1609,7 @@ public class Kkw implements ResourceSetHolder {
 
     public void newSearch() {
         try {
-            setKifkif(new KifKif(session));
+            setKifkif(new KifKif());
         } catch (Throwable e) {
             JOptionPane.showMessageDialog(mainFrame, e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
         }

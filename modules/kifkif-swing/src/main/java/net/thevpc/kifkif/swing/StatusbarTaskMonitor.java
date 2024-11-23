@@ -21,7 +21,6 @@ import javax.swing.event.TreeModelEvent;
 import javax.swing.event.TreeModelListener;
 
 import net.thevpc.common.swing.label.MemoryUseIconTray;
-import net.thevpc.nuts.NSession;
 import net.thevpc.nuts.time.NDuration;
 import net.thevpc.nuts.time.NProgressHandler;
 import net.thevpc.nuts.time.NProgressHandlerEvent;
@@ -47,10 +46,8 @@ class StatusbarTaskMonitor implements NProgressHandler {
     public static final String PROPERTY_STAT_CHANGED = "PROPERTY_STAT_CHANGED";
     private double currentProgress;
     private NMsg currentMessage;
-    private NSession session;
 
-    public StatusbarTaskMonitor(NSession session) {
-        this.session=session;
+    public StatusbarTaskMonitor() {
         support = new PropertyChangeSupport(this);
         JPanel b = new JPanel(new GridBagLayout());
         GridBagConstraints c = new GridBagConstraints();
@@ -134,7 +131,7 @@ class StatusbarTaskMonitor implements NProgressHandler {
         timerAction = new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 long p = ((timer == null) ? endTime : System.currentTimeMillis()) - startTime;
-                chronoLabel.setText(NDuration.ofMillis(p).withSmallestUnit(ChronoUnit.SECONDS).format(session).filteredText());
+                chronoLabel.setText(NDuration.ofMillis(p).withSmallestUnit(ChronoUnit.SECONDS).format().filteredText());
             }
         };
     }

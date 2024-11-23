@@ -13,7 +13,6 @@ import javax.swing.JFileChooser;
 import net.thevpc.kifkif.DuplicateList;
 import net.thevpc.kifkif.SearchData;
 import net.thevpc.kifkif.swing.Kkw;
-import net.thevpc.nuts.NSession;
 import net.thevpc.nuts.time.NDuration;
 
 /**
@@ -30,7 +29,7 @@ public class TextExportSupport implements ExportSupport {
         return getClass().getSimpleName();
     }
 
-    public boolean export(SearchData searchData, OutputStream stream, Map<String, Object> properties, NSession session) throws ExportException, IOException {
+    public boolean export(SearchData searchData, OutputStream stream, Map<String, Object> properties) throws ExportException, IOException {
         Kkw kkw = ((properties == null) ? (Kkw) null : (Kkw) properties.get(ExportSupport.KKW_PROPERTY));
         File outFile = ((properties == null) ? (File) null : (File) properties.get(ExportSupport.FILE_PROPERTY));
         PrintStream out = null;
@@ -95,7 +94,7 @@ public class TextExportSupport implements ExportSupport {
             String elapsedTime =
                     NDuration.ofMillis(searchData.getStatistics().getStatsElapsedTimeMillis())
                             .withSmallestUnit(ChronoUnit.SECONDS)
-                            .format(session).filteredText();
+                            .format().filteredText();
             out.printf("-------------------\n" +
                             "STATISTICS:\n" +
                             " Exec time : %s\n" +

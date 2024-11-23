@@ -8,7 +8,6 @@
     <packaging>jar</packaging>
     <name>net.thevpc.kifkif.kifkif-core</name>
     <properties>
-        <version.jlauncher>1.3.08</version.jlauncher>
         <version.thevpc-common-swing>2.3.9</version.thevpc-common-swing>
         <version.thevpc-common-swing-prs>2.3.9</version.thevpc-common-swing-prs>
         <version.kifkif-core>0.1.4</version.kifkif-core>

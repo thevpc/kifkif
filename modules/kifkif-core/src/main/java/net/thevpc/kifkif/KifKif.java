@@ -61,16 +61,14 @@ public class KifKif implements Serializable, Cloneable {
     private transient SearchStatistics tempStatistics = new SearchStatistics();
 
     private SearchData searchData;
-    private NSession session;
     private NProgressMonitors mons;
 
     /**
      * Simple Constructor
      * No initialization done.
      */
-    public KifKif(NSession session) {
-        this.session = session;
-        this.mons = NProgressMonitors.of(session);
+    public KifKif() {
+        this.mons = NProgressMonitors.of();
     }
 
     /**
@@ -78,8 +76,7 @@ public class KifKif implements Serializable, Cloneable {
      *
      * @param fileMode is one of the constants in FileDiffFactory
      */
-    public KifKif(FileMode[] fileMode, NSession session) {
-        this.session = session;
+    public KifKif(FileMode[] fileMode) {
         setFileMode(fileMode);
     }
 
@@ -393,7 +390,7 @@ public class KifKif implements Serializable, Cloneable {
      * @return list of duplicates
      */
     public SearchData findDuplicates(NProgressMonitor taskMonitor) {
-        taskMonitor = NProgressMonitors.of(session).of(taskMonitor);
+        taskMonitor = NProgressMonitors.of().of(taskMonitor);
         tempFileDuplicatesMap = new Hashtable<Filestamp, DuplicateList>();
         tempFileToStampMap = new Hashtable<File, Filestamp>();
         tempFolderDuplicatesMap = new Hashtable<Filestamp, DuplicateList>();
@@ -415,11 +412,11 @@ public class KifKif implements Serializable, Cloneable {
     }
 
     private void chrono(String name, Runnable r) {
-        session.out().println(NMsg.ofC("start %s", name));
+        NSession.get().out().println(NMsg.ofC("start %s", name));
         NChronometer c = NChronometer.startNow();
         r.run();
         c.stop();
-        session.out().println(NMsg.ofC("%s %s", name, c));
+        NSession.get().out().println(NMsg.ofC("%s %s", name, c));
     }
 
     private void processFinalize(Object[] progress_params, NProgressMonitor taskMonitor) {

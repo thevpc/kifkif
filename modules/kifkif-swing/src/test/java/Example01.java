@@ -3,7 +3,6 @@ import net.thevpc.kifkif.*;
 import net.thevpc.kifkif.swing.export.TextExportSupport;
 import net.thevpc.kifkif.swing.export.ExportException;
 import net.thevpc.nuts.Nuts;
-import net.thevpc.nuts.NSession;
 import net.thevpc.nuts.util.NEnumSet;
 
 import java.io.IOException;
@@ -19,8 +18,8 @@ import java.util.Iterator;
  */
 public class Example01 {
     public static void main(String[] args) {
-        NSession session = Nuts.openWorkspace("--sandbox", "-y");
-        KifKif kifKif = new KifKif(session);
+        Nuts.openWorkspace("--sandbox", "-y").setSharedInstance();
+        KifKif kifKif = new KifKif();
 
         // searching only File duplicates by name (case sensitive search)
         NEnumSet<FileMode> diffMode =FileMode.FILE_CONTENT.add(FileMode.FILE_NAME);
@@ -55,7 +54,7 @@ public class Example01 {
         System.out.println("************************************* ");
         TextExportSupport textExportSupport = new TextExportSupport();
         try {
-            textExportSupport.export(searchData, System.out, null, session);
+            textExportSupport.export(searchData, System.out, null);
         } catch (ExportException e) {
             System.out.println("Export Exception : ");
             e.printStackTrace();
