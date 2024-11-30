@@ -25,6 +25,7 @@ import net.thevpc.nuts.time.NDuration;
 import net.thevpc.nuts.time.NProgressHandler;
 import net.thevpc.nuts.time.NProgressHandlerEvent;
 import net.thevpc.nuts.util.NMsg;
+import net.thevpc.nuts.format.NFormats;
 
 /**
  * @author vpc Date: 19 janv. 2005 Time: 16:36:41
@@ -131,7 +132,7 @@ class StatusbarTaskMonitor implements NProgressHandler {
         timerAction = new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 long p = ((timer == null) ? endTime : System.currentTimeMillis()) - startTime;
-                chronoLabel.setText(NDuration.ofMillis(p).withSmallestUnit(ChronoUnit.SECONDS).format().filteredText());
+                chronoLabel.setText(NFormats.of(NDuration.ofMillis(p).withSmallestUnit(ChronoUnit.SECONDS)).get().format().filteredText());
             }
         };
     }

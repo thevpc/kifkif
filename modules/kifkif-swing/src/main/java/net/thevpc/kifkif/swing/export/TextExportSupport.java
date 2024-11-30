@@ -14,6 +14,7 @@ import net.thevpc.kifkif.DuplicateList;
 import net.thevpc.kifkif.SearchData;
 import net.thevpc.kifkif.swing.Kkw;
 import net.thevpc.nuts.time.NDuration;
+import net.thevpc.nuts.format.NFormats;
 
 /**
  * @author vpc
@@ -91,10 +92,10 @@ public class TextExportSupport implements ExportSupport {
                     out.println("\t" + file1.getPath() + suffix);
                 }
             }
-            String elapsedTime =
+            String elapsedTime =NFormats.of(
                     NDuration.ofMillis(searchData.getStatistics().getStatsElapsedTimeMillis())
                             .withSmallestUnit(ChronoUnit.SECONDS)
-                            .format().filteredText();
+            ).get().format().filteredText();
             out.printf("-------------------\n" +
                             "STATISTICS:\n" +
                             " Exec time : %s\n" +
