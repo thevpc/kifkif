@@ -412,11 +412,11 @@ public class KifKif implements Serializable, Cloneable {
     }
 
     private void chrono(String name, Runnable r) {
-        NSession.get().out().println(NMsg.ofC("start %s", name));
+        NSession.of().out().println(NMsg.ofC("start %s", name));
         NChronometer c = NChronometer.startNow();
         r.run();
         c.stop();
-        NSession.get().out().println(NMsg.ofC("%s %s", name, c));
+        NSession.of().out().println(NMsg.ofC("%s %s", name, c));
     }
 
     private void processFinalize(Object[] progress_params, NProgressMonitor taskMonitor) {

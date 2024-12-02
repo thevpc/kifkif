@@ -222,7 +222,7 @@ public class Kkw implements ResourceSetHolder {
     private transient PropertyChangeSupport support;
 
     public Kkw() {
-        NSession session = NSession.get();
+        NSession session = NSession.of();
         SwingUtilities.invokeLater(()->session.getWorkspace().setSharedInstance());
 
         String locale1 = session.getLocale().orNull();
