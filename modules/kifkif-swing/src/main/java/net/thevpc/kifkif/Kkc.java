@@ -31,7 +31,7 @@ public final class Kkc implements NApplication {
     }
 
     public static void main(String[] args) {
-        new Kkc().run(args);
+        new Kkc().main(NMainArgs.ofHandled(args));
     }
 
     @Override
