@@ -238,7 +238,7 @@ public final class Kkc implements NApplication {
         if (value == null || value.isEmpty()) {
             return m.ofSilent();
         } else if (NLiteral.of(value).isBoolean()) {
-            return NLiteral.of(value).asBooleanValue().get() ?
+            return NLiteral.of(value).asBoolean().get() ?
                     m.ofLogger(500) : m.ofSilent();
         } else if (value.equals("always")) {
             return m.ofLogger();
