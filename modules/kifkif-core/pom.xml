@@ -1,5 +1,4 @@
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<?xml version="1.0" encoding="UTF-8" standalone="no"?><project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>net.thevpc.kifkif</groupId>
@@ -15,11 +14,7 @@
     </properties>
 
     <dependencies>
-        <dependency>
-            <groupId>net.thevpc.nuts</groupId>
-            <artifactId>nuts-lib</artifactId>
-            <version>0.8.5.0</version>
-        </dependency>
+        <dependency><groupId>net.thevpc.nuts</groupId><artifactId>nuts-lib</artifactId><version>0.8.5.0</version></dependency>
 
 
         <!-- ##############################
@@ -30,12 +25,7 @@
         <!-- ##############################
                 TEST DEPENDENCIES
         ############################## -->
-        <dependency>
-            <groupId>junit</groupId>
-            <artifactId>junit</artifactId>
-            <version>${version.junit}</version>
-            <scope>test</scope>
-        </dependency>
+        <dependency><groupId>junit</groupId><artifactId>junit</artifactId><version>${version.junit}</version><scope>test</scope></dependency>
         
     </dependencies>
     
