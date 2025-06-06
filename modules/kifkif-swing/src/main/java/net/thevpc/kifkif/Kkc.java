@@ -12,7 +12,6 @@ import net.thevpc.common.prs.messageset.MessageSet;
 import net.thevpc.nuts.*;
 import net.thevpc.nuts.cmdline.NArg;
 import net.thevpc.nuts.cmdline.NCmdLine;
-import net.thevpc.nuts.cmdline.NCmdLineContext;
 import net.thevpc.nuts.cmdline.NCmdLineRunner;
 import net.thevpc.nuts.time.NProgressMonitor;
 import net.thevpc.nuts.time.NProgressMonitors;
@@ -40,12 +39,12 @@ public final class Kkc implements NApplication {
             Options options = new Options();
 
             @Override
-            public boolean nextOption(NArg option, NCmdLine cmdLine, NCmdLineContext context) {
+            public boolean nextOption(NArg option, NCmdLine cmdLine) {
                 switch (option.key()) {
                     case "-c":
                     case "--console": {
                         NArg a = cmdLine.nextFlag().get();
-                        if (a.isActive()) {
+                        if (a.isNonCommented()) {
                             options.console = a.getBooleanValue().get();
                         }
                         return true;
@@ -53,7 +52,7 @@ public final class Kkc implements NApplication {
                     case "-o":
                     case "--output": {
                         NArg a = cmdLine.nextEntry().get();
-                        if (a.isActive()) {
+                        if (a.isNonCommented()) {
                             options.file=(a.getStringValue().get());
                         }
                         return true;
@@ -61,7 +60,7 @@ public final class Kkc implements NApplication {
                     case "-i":
                     case "--ignore-case": {
                         NArg a = cmdLine.nextFlag().get();
-                        if (a.isActive()) {
+                        if (a.isNonCommented()) {
                             options.insensitive = a.getBooleanValue().get();
                         }
                         return true;
@@ -69,7 +68,7 @@ public final class Kkc implements NApplication {
                     case "-m":
                     case "--monitor": {
                         NArg a = cmdLine.nextEntry().get();
-                        if (a.isActive()) {
+                        if (a.isNonCommented()) {
                             options.monitor=a.getStringValue().get();
                         }
                         return true;
@@ -129,7 +128,7 @@ public final class Kkc implements NApplication {
                     case "-1":
                     case "--default-1": {
                         NArg a = cmdLine.nextFlag().get();
-                        if (a.isActive()) {
+                        if (a.isNonCommented()) {
                             if (a.getBooleanValue().get()) {
                                 options.diffFileOption.add(FileMode.FILE_NAME);
                                 options.diffFileOption.add(FileMode.FILE_SIZE);
@@ -145,7 +144,7 @@ public final class Kkc implements NApplication {
                     case "-2":
                     case "--default-2": {
                         NArg a = cmdLine.nextFlag().get();
-                        if (a.isActive()) {
+                        if (a.isNonCommented()) {
                             if (a.getBooleanValue().get()) {
                                 options.diffFileOption.add(FileMode.FILE_NAME);
                                 options.diffFileOption.add(FileMode.FILE_SIZE);
@@ -159,14 +158,14 @@ public final class Kkc implements NApplication {
                     }
                     case "--include": {
                         NArg a = cmdLine.nextEntry().get();
-                        if (a.isActive()) {
+                        if (a.isNonCommented()) {
                             options.includedFileSets.add(a.getStringValue().get());
                         }
                         return true;
                     }
                     case "--exclude": {
                         NArg a = cmdLine.nextEntry().get();
-                        if (a.isActive()) {
+                        if (a.isNonCommented()) {
                             options.excludedFileSets.add(a.getStringValue().get());
                         }
                         return true;
@@ -177,7 +176,7 @@ public final class Kkc implements NApplication {
 
             private void processFlag(NCmdLine commandline, FileMode flag) {
                 NArg a = commandline.nextFlag().get();
-                if (a.isActive()) {
+                if (a.isNonCommented()) {
                     if (a.getBooleanValue().get()) {
                         options.diffFileOption.add(flag);
                     } else {
@@ -187,13 +186,13 @@ public final class Kkc implements NApplication {
             }
 
             @Override
-            public boolean nextNonOption(NArg nonOption, NCmdLine cmdLine, NCmdLineContext context) {
+            public boolean nextNonOption(NArg nonOption, NCmdLine cmdLine) {
                 options.includedFileSets.add(cmdLine.nextEntry().get().getStringValue().get());
                 return true;
             }
 
             @Override
-            public void run(NCmdLine cmdLine, NCmdLineContext context) {
+            public void run(NCmdLine cmdLine) {
                 if (options.console == null || !options.console) {
                     Kkw w = new Kkw();
                     w.showFrame();
