@@ -39,140 +39,146 @@ public final class Kkc implements NApplication {
             Options options = new Options();
 
             @Override
-            public boolean nextOption(NArg option, NCmdLine cmdLine) {
-                switch (option.key()) {
-                    case "-c":
-                    case "--console": {
-                        NArg a = cmdLine.nextFlag().get();
-                        if (a.isNonCommented()) {
-                            options.console = a.getBooleanValue().get();
-                        }
-                        return true;
-                    }
-                    case "-o":
-                    case "--output": {
-                        NArg a = cmdLine.nextEntry().get();
-                        if (a.isNonCommented()) {
-                            options.file=(a.getStringValue().get());
-                        }
-                        return true;
-                    }
-                    case "-i":
-                    case "--ignore-case": {
-                        NArg a = cmdLine.nextFlag().get();
-                        if (a.isNonCommented()) {
-                            options.insensitive = a.getBooleanValue().get();
-                        }
-                        return true;
-                    }
-                    case "-m":
-                    case "--monitor": {
-                        NArg a = cmdLine.nextEntry().get();
-                        if (a.isNonCommented()) {
-                            options.monitor=a.getStringValue().get();
-                        }
-                        return true;
-                    }
-                    case "--fc":
-                    case "--file-content": {
-                        processFlag(cmdLine, FileMode.FILE_CONTENT);
-                        return true;
-                    }
-                    case "--dc":
-                    case "--dir-content": {
-                        processFlag(cmdLine, FileMode.FOLDER_CONTENT);
-                        return true;
-                    }
-                    case "--fh":
-                    case "--file-checksum": {
-                        processFlag(cmdLine, FileMode.FILE_STAMP);
-                        return true;
-                    }
-                    case "--dh":
-                    case "--dir-checksum": {
-                        processFlag(cmdLine, FileMode.FOLDER_STAMP);
-                        return true;
-                    }
-                    case "--ft":
-                    case "--file-time": {
-                        processFlag(cmdLine, FileMode.FILE_TIME);
-                        return true;
-                    }
-                    case "--dt":
-                    case "--dir-time": {
-                        processFlag(cmdLine, FileMode.FOLDER_TIME);
-                        return true;
-                    }
-
-                    case "--fs":
-                    case "--file-size": {
-                        processFlag(cmdLine, FileMode.FILE_SIZE);
-                        return true;
-                    }
-                    case "--ds":
-                    case "--dir-size": {
-                        processFlag(cmdLine, FileMode.FOLDER_SIZE);
-                        return true;
-                    }
-
-                    case "--fn":
-                    case "--file-name": {
-                        processFlag(cmdLine, FileMode.FILE_NAME);
-                        return true;
-                    }
-                    case "--dn":
-                    case "--dir-name": {
-                        processFlag(cmdLine, FileMode.FOLDER_NAME);
-                        return true;
-                    }
-                    case "-1":
-                    case "--default-1": {
-                        NArg a = cmdLine.nextFlag().get();
-                        if (a.isNonCommented()) {
-                            if (a.getBooleanValue().get()) {
-                                options.diffFileOption.add(FileMode.FILE_NAME);
-                                options.diffFileOption.add(FileMode.FILE_SIZE);
-                                options.diffFileOption.add(FileMode.FILE_CONTENT);
-                                options.diffFileOption.add(FileMode.FOLDER_NAME);
-                                options.diffFileOption.add(FileMode.FOLDER_SIZE);
-                                options.diffFileOption.add(FileMode.FOLDER_CONTENT);
+            public boolean next(NArg arg, NCmdLine cmdLine) {
+                if(arg.isOption()){
+                    switch (arg.key()) {
+                        case "-c":
+                        case "--console": {
+                            NArg a = cmdLine.nextFlag().get();
+                            if (a.isNonCommented()) {
+                                options.console = a.getBooleanValue().get();
                             }
+                            return true;
+                        }
+                        case "-o":
+                        case "--output": {
+                            NArg a = cmdLine.nextEntry().get();
+                            if (a.isNonCommented()) {
+                                options.file=(a.getStringValue().get());
+                            }
+                            return true;
+                        }
+                        case "-i":
+                        case "--ignore-case": {
+                            NArg a = cmdLine.nextFlag().get();
+                            if (a.isNonCommented()) {
+                                options.insensitive = a.getBooleanValue().get();
+                            }
+                            return true;
+                        }
+                        case "-m":
+                        case "--monitor": {
+                            NArg a = cmdLine.nextEntry().get();
+                            if (a.isNonCommented()) {
+                                options.monitor=a.getStringValue().get();
+                            }
+                            return true;
+                        }
+                        case "--fc":
+                        case "--file-content": {
+                            processFlag(cmdLine, FileMode.FILE_CONTENT);
+                            return true;
+                        }
+                        case "--dc":
+                        case "--dir-content": {
+                            processFlag(cmdLine, FileMode.FOLDER_CONTENT);
+                            return true;
+                        }
+                        case "--fh":
+                        case "--file-checksum": {
+                            processFlag(cmdLine, FileMode.FILE_STAMP);
+                            return true;
+                        }
+                        case "--dh":
+                        case "--dir-checksum": {
+                            processFlag(cmdLine, FileMode.FOLDER_STAMP);
+                            return true;
+                        }
+                        case "--ft":
+                        case "--file-time": {
+                            processFlag(cmdLine, FileMode.FILE_TIME);
+                            return true;
+                        }
+                        case "--dt":
+                        case "--dir-time": {
+                            processFlag(cmdLine, FileMode.FOLDER_TIME);
+                            return true;
                         }
 
-                        return true;
-                    }
-                    case "-2":
-                    case "--default-2": {
-                        NArg a = cmdLine.nextFlag().get();
-                        if (a.isNonCommented()) {
-                            if (a.getBooleanValue().get()) {
-                                options.diffFileOption.add(FileMode.FILE_NAME);
-                                options.diffFileOption.add(FileMode.FILE_SIZE);
-                                options.diffFileOption.add(FileMode.FILE_STAMP);
-                                options.diffFileOption.add(FileMode.FOLDER_NAME);
-                                options.diffFileOption.add(FileMode.FOLDER_SIZE);
-                                options.diffFileOption.add(FileMode.FOLDER_STAMP);
+                        case "--fs":
+                        case "--file-size": {
+                            processFlag(cmdLine, FileMode.FILE_SIZE);
+                            return true;
+                        }
+                        case "--ds":
+                        case "--dir-size": {
+                            processFlag(cmdLine, FileMode.FOLDER_SIZE);
+                            return true;
+                        }
+
+                        case "--fn":
+                        case "--file-name": {
+                            processFlag(cmdLine, FileMode.FILE_NAME);
+                            return true;
+                        }
+                        case "--dn":
+                        case "--dir-name": {
+                            processFlag(cmdLine, FileMode.FOLDER_NAME);
+                            return true;
+                        }
+                        case "-1":
+                        case "--default-1": {
+                            NArg a = cmdLine.nextFlag().get();
+                            if (a.isNonCommented()) {
+                                if (a.getBooleanValue().get()) {
+                                    options.diffFileOption.add(FileMode.FILE_NAME);
+                                    options.diffFileOption.add(FileMode.FILE_SIZE);
+                                    options.diffFileOption.add(FileMode.FILE_CONTENT);
+                                    options.diffFileOption.add(FileMode.FOLDER_NAME);
+                                    options.diffFileOption.add(FileMode.FOLDER_SIZE);
+                                    options.diffFileOption.add(FileMode.FOLDER_CONTENT);
+                                }
                             }
+
+                            return true;
                         }
-                        return true;
-                    }
-                    case "--include": {
-                        NArg a = cmdLine.nextEntry().get();
-                        if (a.isNonCommented()) {
-                            options.includedFileSets.add(a.getStringValue().get());
+                        case "-2":
+                        case "--default-2": {
+                            NArg a = cmdLine.nextFlag().get();
+                            if (a.isNonCommented()) {
+                                if (a.getBooleanValue().get()) {
+                                    options.diffFileOption.add(FileMode.FILE_NAME);
+                                    options.diffFileOption.add(FileMode.FILE_SIZE);
+                                    options.diffFileOption.add(FileMode.FILE_STAMP);
+                                    options.diffFileOption.add(FileMode.FOLDER_NAME);
+                                    options.diffFileOption.add(FileMode.FOLDER_SIZE);
+                                    options.diffFileOption.add(FileMode.FOLDER_STAMP);
+                                }
+                            }
+                            return true;
                         }
-                        return true;
-                    }
-                    case "--exclude": {
-                        NArg a = cmdLine.nextEntry().get();
-                        if (a.isNonCommented()) {
-                            options.excludedFileSets.add(a.getStringValue().get());
+                        case "--include": {
+                            NArg a = cmdLine.nextEntry().get();
+                            if (a.isNonCommented()) {
+                                options.includedFileSets.add(a.getStringValue().get());
+                            }
+                            return true;
                         }
-                        return true;
+                        case "--exclude": {
+                            NArg a = cmdLine.nextEntry().get();
+                            if (a.isNonCommented()) {
+                                options.excludedFileSets.add(a.getStringValue().get());
+                            }
+                            return true;
+                        }
                     }
+                    return false;
+                }else{
+                    options.includedFileSets.add(cmdLine.nextEntry().get().getStringValue().get());
+                    return true;
                 }
-                return false;
             }
+
 
             private void processFlag(NCmdLine commandline, FileMode flag) {
                 NArg a = commandline.nextFlag().get();
@@ -183,12 +189,6 @@ public final class Kkc implements NApplication {
                         options.diffFileOption.remove(flag);
                     }
                 }
-            }
-
-            @Override
-            public boolean nextNonOption(NArg nonOption, NCmdLine cmdLine) {
-                options.includedFileSets.add(cmdLine.nextEntry().get().getStringValue().get());
-                return true;
             }
 
             @Override
