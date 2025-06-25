@@ -18,7 +18,7 @@ import java.util.Iterator;
  */
 public class Example01 {
     public static void main(String[] args) {
-        Nuts.openWorkspace("--sandbox", "-y").setSharedInstance();
+        Nuts.require();
         KifKif kifKif = new KifKif();
 
         // searching only File duplicates by name (case sensitive search)
