@@ -24,7 +24,7 @@ import net.thevpc.nuts.util.NMsg;
  * Date: 5 janv. 2005
  * Time: 21:02:48
  */
-@NApp.Info
+@NApp.Definition
 public final class Kkc  {
     public Kkc() {
 
