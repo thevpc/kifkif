@@ -34,7 +34,7 @@ public final class Kkc  {
         NApp.builder(args).run();
     }
 
-    @NApp.Main
+    @NApp.Runner
     public void run() {
         NApp.of().runCmdLine(new NCmdLineRunner() {
             Options options = new Options();
