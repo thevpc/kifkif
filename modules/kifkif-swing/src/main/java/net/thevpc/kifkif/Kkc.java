@@ -46,7 +46,7 @@ public final class Kkc  {
                         case "-c":
                         case "--console": {
                             NArg a = cmdLine.nextFlag().get();
-                            if (a.isNonCommented()) {
+                            if (a.isUncommented()) {
                                 options.console = a.getBooleanValue().get();
                             }
                             return true;
@@ -54,7 +54,7 @@ public final class Kkc  {
                         case "-o":
                         case "--output": {
                             NArg a = cmdLine.nextEntry().get();
-                            if (a.isNonCommented()) {
+                            if (a.isUncommented()) {
                                 options.file=(a.getStringValue().get());
                             }
                             return true;
@@ -62,7 +62,7 @@ public final class Kkc  {
                         case "-i":
                         case "--ignore-case": {
                             NArg a = cmdLine.nextFlag().get();
-                            if (a.isNonCommented()) {
+                            if (a.isUncommented()) {
                                 options.insensitive = a.getBooleanValue().get();
                             }
                             return true;
@@ -70,7 +70,7 @@ public final class Kkc  {
                         case "-m":
                         case "--monitor": {
                             NArg a = cmdLine.nextEntry().get();
-                            if (a.isNonCommented()) {
+                            if (a.isUncommented()) {
                                 options.monitor=a.getStringValue().get();
                             }
                             return true;
@@ -130,7 +130,7 @@ public final class Kkc  {
                         case "-1":
                         case "--default-1": {
                             NArg a = cmdLine.nextFlag().get();
-                            if (a.isNonCommented()) {
+                            if (a.isUncommented()) {
                                 if (a.getBooleanValue().get()) {
                                     options.diffFileOption.add(FileMode.FILE_NAME);
                                     options.diffFileOption.add(FileMode.FILE_SIZE);
@@ -146,7 +146,7 @@ public final class Kkc  {
                         case "-2":
                         case "--default-2": {
                             NArg a = cmdLine.nextFlag().get();
-                            if (a.isNonCommented()) {
+                            if (a.isUncommented()) {
                                 if (a.getBooleanValue().get()) {
                                     options.diffFileOption.add(FileMode.FILE_NAME);
                                     options.diffFileOption.add(FileMode.FILE_SIZE);
@@ -160,14 +160,14 @@ public final class Kkc  {
                         }
                         case "--include": {
                             NArg a = cmdLine.nextEntry().get();
-                            if (a.isNonCommented()) {
+                            if (a.isUncommented()) {
                                 options.includedFileSets.add(a.getStringValue().get());
                             }
                             return true;
                         }
                         case "--exclude": {
                             NArg a = cmdLine.nextEntry().get();
-                            if (a.isNonCommented()) {
+                            if (a.isUncommented()) {
                                 options.excludedFileSets.add(a.getStringValue().get());
                             }
                             return true;
@@ -183,7 +183,7 @@ public final class Kkc  {
 
             private void processFlag(NCmdLine commandline, FileMode flag) {
                 NArg a = commandline.nextFlag().get();
-                if (a.isNonCommented()) {
+                if (a.isUncommented()) {
                     if (a.getBooleanValue().get()) {
                         options.diffFileOption.add(flag);
                     } else {
