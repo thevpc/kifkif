@@ -24,7 +24,7 @@ import net.thevpc.nuts.util.NMsg;
  * Date: 5 janv. 2005
  * Time: 21:02:48
  */
-@NApp.Definition
+@NAppDefinition
 public final class Kkc  {
     public Kkc() {
 
@@ -34,7 +34,7 @@ public final class Kkc  {
         NApp.builder(args).run();
     }
 
-    @NApp.Runner
+    @NAppRunner
     public void run() {
         NApp.of().runCmdLine(new NCmdLineRunner() {
             Options options = new Options();
