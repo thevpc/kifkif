@@ -25,7 +25,7 @@ import net.thevpc.nuts.time.NDuration;
 import net.thevpc.nuts.time.NProgressHandler;
 import net.thevpc.nuts.time.NProgressHandlerEvent;
 import net.thevpc.nuts.util.NMsg;
-import net.thevpc.nuts.format.NFormats;
+import net.thevpc.nuts.text.NFormats;
 
 /**
  * @author vpc Date: 19 janv. 2005 Time: 16:36:41
