@@ -14,7 +14,7 @@ import net.thevpc.kifkif.DuplicateList;
 import net.thevpc.kifkif.SearchData;
 import net.thevpc.kifkif.swing.Kkw;
 import net.thevpc.nuts.time.NDuration;
-import net.thevpc.nuts.format.NFormats;
+import net.thevpc.nuts.text.NFormats;
 
 /**
  * @author vpc
