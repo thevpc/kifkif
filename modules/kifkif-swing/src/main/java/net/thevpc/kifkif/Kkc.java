@@ -19,7 +19,7 @@ import net.thevpc.nuts.time.NProgressMonitor;
 import net.thevpc.nuts.time.NProgressMonitors;
 import net.thevpc.nuts.util.NIllegalArgumentException;
 import net.thevpc.nuts.util.NLiteral;
-import net.thevpc.nuts.util.NMsg;
+import net.thevpc.nuts.text.NMsg;
 
 /**
  * Kikif Console
