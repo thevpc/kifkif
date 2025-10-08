@@ -9,7 +9,7 @@ import net.thevpc.nuts.time.NChronometer;
 import net.thevpc.nuts.time.NProgressMonitor;
 import net.thevpc.nuts.time.NProgressMonitors;
 import net.thevpc.nuts.util.NEnumSet;
-import net.thevpc.nuts.util.NMsg;
+import net.thevpc.nuts.text.NMsg;
 
 /**
  * Kikif Engine
