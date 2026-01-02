@@ -21,11 +21,12 @@ import javax.swing.event.TreeModelEvent;
 import javax.swing.event.TreeModelListener;
 
 import net.thevpc.common.swing.label.MemoryUseIconTray;
+import net.thevpc.nuts.io.NIO;
+import net.thevpc.nuts.text.NObjectWriter;
 import net.thevpc.nuts.time.NDuration;
 import net.thevpc.nuts.time.NProgressHandler;
 import net.thevpc.nuts.time.NProgressHandlerEvent;
 import net.thevpc.nuts.text.NMsg;
-import net.thevpc.nuts.text.NFormats;
 
 /**
  * @author vpc Date: 19 janv. 2005 Time: 16:36:41
@@ -133,9 +134,7 @@ class StatusbarTaskMonitor implements NProgressHandler {
             public void actionPerformed(ActionEvent e) {
                 long p = ((timer == null) ? endTime : System.currentTimeMillis()) - startTime;
                 NDuration v = NDuration.ofMillis(p).withSmallestUnit(ChronoUnit.SECONDS);
-                chronoLabel.setText(NFormats.of(
-                        v
-                ).get().format(v).filteredText());
+                chronoLabel.setText(NObjectWriter.of(v).format(v).filteredText());
             }
         };
     }
