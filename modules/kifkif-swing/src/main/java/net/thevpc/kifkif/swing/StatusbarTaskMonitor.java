@@ -132,7 +132,10 @@ class StatusbarTaskMonitor implements NProgressHandler {
         timerAction = new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 long p = ((timer == null) ? endTime : System.currentTimeMillis()) - startTime;
-                chronoLabel.setText(NFormats.of(NDuration.ofMillis(p).withSmallestUnit(ChronoUnit.SECONDS)).get().format().filteredText());
+                NDuration v = NDuration.ofMillis(p).withSmallestUnit(ChronoUnit.SECONDS);
+                chronoLabel.setText(NFormats.of(
+                        v
+                ).get().format(v).filteredText());
             }
         };
     }
