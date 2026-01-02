@@ -92,10 +92,11 @@ public class TextExportSupport implements ExportSupport {
                     out.println("\t" + file1.getPath() + suffix);
                 }
             }
+            NDuration v = NDuration.ofMillis(searchData.getStatistics().getStatsElapsedTimeMillis())
+                    .withSmallestUnit(ChronoUnit.SECONDS);
             String elapsedTime =NFormats.of(
-                    NDuration.ofMillis(searchData.getStatistics().getStatsElapsedTimeMillis())
-                            .withSmallestUnit(ChronoUnit.SECONDS)
-            ).get().format().filteredText();
+                    v
+            ).get().format(v).filteredText();
             out.printf("-------------------\n" +
                             "STATISTICS:\n" +
                             " Exec time : %s\n" +
