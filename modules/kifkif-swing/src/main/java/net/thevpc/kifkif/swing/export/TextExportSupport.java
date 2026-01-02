@@ -13,8 +13,9 @@ import javax.swing.JFileChooser;
 import net.thevpc.kifkif.DuplicateList;
 import net.thevpc.kifkif.SearchData;
 import net.thevpc.kifkif.swing.Kkw;
+import net.thevpc.nuts.io.NIO;
+import net.thevpc.nuts.text.NObjectWriter;
 import net.thevpc.nuts.time.NDuration;
-import net.thevpc.nuts.text.NFormats;
 
 /**
  * @author vpc
@@ -94,9 +95,7 @@ public class TextExportSupport implements ExportSupport {
             }
             NDuration v = NDuration.ofMillis(searchData.getStatistics().getStatsElapsedTimeMillis())
                     .withSmallestUnit(ChronoUnit.SECONDS);
-            String elapsedTime =NFormats.of(
-                    v
-            ).get().format(v).filteredText();
+            String elapsedTime = NObjectWriter.of(v).format(v).filteredText();
             out.printf("-------------------\n" +
                             "STATISTICS:\n" +
                             " Exec time : %s\n" +
