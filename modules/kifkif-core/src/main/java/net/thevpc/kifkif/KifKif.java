@@ -413,7 +413,7 @@ public class KifKif implements Serializable, Cloneable {
 
     private void chrono(String name, Runnable r) {
         NOut.println(NMsg.ofC("start %s", name));
-        NChronometer c = NChronometer.startNow();
+        NChronometer c = NChronometer.of();
         r.run();
         c.stop();
         NOut.println(NMsg.ofC("%s %s", name, c));
