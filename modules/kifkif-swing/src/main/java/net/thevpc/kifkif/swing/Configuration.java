@@ -31,7 +31,7 @@ public class Configuration {
     public boolean load() {
         Properties p = null;
         if (file.exists()) {
-            try (InputStream in = file.getInputStream()) {
+            try (InputStream in = file.inputStream()) {
                 p = new Properties();
                 p.loadFromXML(in);
                 properties.clear();
@@ -51,7 +51,7 @@ public class Configuration {
             if (parent != null && !parent.exists()) {
                 parent.mkdirs();
             }
-            try (OutputStream out = file.getOutputStream()) {
+            try (OutputStream out = file.outputStream()) {
                 p = new Properties();
                 p.putAll(properties);
                 p.storeToXML(out, "Configuration File");

@@ -239,7 +239,7 @@ public class Kkw implements ResourceSetHolder {
         LocaleManager.getInstance().registerLocale(Locale.ITALIAN);
         LocaleManager.getInstance().registerLocale(new Locale("ar"));
         try {
-            configuration = new Configuration(NApp.of().getConfFolder().resolve("kkw.xml"), true);
+            configuration = new Configuration(NApp.of().confFolder().resolve("kkw.xml"), true);
         } catch (Exception e) {
             e.printStackTrace();
         }
