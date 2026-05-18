@@ -12,8 +12,6 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Properties;
 import java.util.StringTokenizer;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
  * @author vpc
@@ -49,7 +47,7 @@ public class Configuration {
     public boolean save() {
         Properties p = null;
         try {
-            NPath parent = file.getParent();
+            NPath parent = file.parent();
             if (parent != null && !parent.exists()) {
                 parent.mkdirs();
             }
