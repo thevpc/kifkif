@@ -223,9 +223,9 @@ public class Kkw implements ResourceSetHolder {
 
     public Kkw() {
         NSession session = NSession.of();
-        SwingUtilities.invokeLater(()->session.getWorkspace().setSharedInstance());
+        SwingUtilities.invokeLater(()->session.workspace().setSharedInstance());
 
-        String locale1 = session.getLocale().orNull();
+        String locale1 = session.locale().orNull();
         if (locale1 != null) {
             Locale locale = new Locale(locale1);
             Locale.setDefault(locale);
