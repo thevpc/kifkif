@@ -298,7 +298,7 @@ public class KifKif implements Serializable, Cloneable {
             NProgressMonitor s2 = split[1].incremental(tempFolderDuplicatesMap.size());
             int count = -1;
             while (true) {
-                s2.setProgress(0);
+                s2.progress(0);
                 ArrayList<File> toRemove = new ArrayList<File>();
                 for (DuplicateList duplicateList : tempFolderDuplicatesMap.values()) {
                     int c = duplicateList.getFileCount();
@@ -584,7 +584,7 @@ public class KifKif implements Serializable, Cloneable {
                 PROGRESS_PARAMS[INIT_FOLDERS_COUNT] = tempStatistics.sourceFoldersCount;
 //                    taskMonitor.inc("InitItem", PROGRESS_PARAMS);
                 registerFile(file);
-                split[0].setProgress(i.progressRatio(), NMsg.ofC("InitItem %s", Arrays.asList(PROGRESS_PARAMS)));
+                split[0].progress(i.progressRatio(), NMsg.ofC("InitItem %s", Arrays.asList(PROGRESS_PARAMS)));
             }
             if (tempStatistics.sourceFilesCount == 0 && tempStatistics.sourceFoldersCount == 0) {
                 throw new IllegalArgumentException("Not Valid File set found");

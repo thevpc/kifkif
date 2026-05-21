@@ -21,7 +21,6 @@ import javax.swing.event.TreeModelEvent;
 import javax.swing.event.TreeModelListener;
 
 import net.thevpc.common.swing.label.MemoryUseIconTray;
-import net.thevpc.nuts.io.NIO;
 import net.thevpc.nuts.text.NObjectWriter;
 import net.thevpc.nuts.time.NDuration;
 import net.thevpc.nuts.time.NProgressHandler;
@@ -149,8 +148,8 @@ class StatusbarTaskMonitor implements NProgressHandler {
 
     @Override
     public void onEvent(NProgressHandlerEvent event) {
-        this.currentMessage = event.getModel().getMessage();
-        this.currentProgress = event.getModel().getProgress();
+        this.currentMessage = event.model().message();
+        this.currentProgress = event.model().progress();
         SwingUtilities.invokeLater(new Runnable() {
             @Override
             public void run() {
