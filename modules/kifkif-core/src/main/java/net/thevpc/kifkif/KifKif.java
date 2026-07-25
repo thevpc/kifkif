@@ -5,9 +5,9 @@ import java.util.*;
 
 import net.thevpc.kifkif.stamp.DefaultFilestamp;
 import net.thevpc.nuts.io.NOut;
-import net.thevpc.nuts.time.NChronometer;
-import net.thevpc.nuts.time.NProgressMonitor;
-import net.thevpc.nuts.time.NProgressMonitors;
+import net.thevpc.nuts.mon.NChronometer;
+import net.thevpc.nuts.mon.NProgressMonitor;
+import net.thevpc.nuts.mon.NProgressMonitors;
 import net.thevpc.nuts.util.NEnumSet;
 import net.thevpc.nuts.text.NMsg;
 

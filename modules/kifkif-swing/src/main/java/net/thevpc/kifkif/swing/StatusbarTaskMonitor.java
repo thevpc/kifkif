@@ -23,8 +23,8 @@ import javax.swing.event.TreeModelListener;
 import net.thevpc.common.swing.label.MemoryUseIconTray;
 import net.thevpc.nuts.text.NObjectWriter;
 import net.thevpc.nuts.time.NDuration;
-import net.thevpc.nuts.time.NProgressHandler;
-import net.thevpc.nuts.time.NProgressHandlerEvent;
+import net.thevpc.nuts.mon.NProgressHandler;
+import net.thevpc.nuts.mon.NProgressHandlerEvent;
 import net.thevpc.nuts.text.NMsg;
 
 /**

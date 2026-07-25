@@ -49,7 +49,7 @@ import net.thevpc.common.swing.prs.ComponentResourcesUpdater;
 import net.thevpc.common.swing.prs.PRSManager;
 import net.thevpc.nuts.app.NApp;
 import net.thevpc.nuts.core.NSession;
-import net.thevpc.nuts.time.NProgressMonitors;
+import net.thevpc.nuts.mon.NProgressMonitors;
 import net.thevpc.nuts.util.NEnumSet;
 import net.thevpc.swing.plaf.UIPlafManager;
 
