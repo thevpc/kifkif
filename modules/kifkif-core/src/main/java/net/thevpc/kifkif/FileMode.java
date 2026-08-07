@@ -1,6 +1,6 @@
 package net.thevpc.kifkif;
 
-import net.thevpc.nuts.util.NEnumSet;
+import net.thevpc.nuts.collections.NEnumSet;
 
 public enum FileMode {
     /**

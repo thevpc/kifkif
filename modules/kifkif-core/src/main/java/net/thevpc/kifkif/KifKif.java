@@ -8,7 +8,7 @@ import net.thevpc.nuts.io.NOut;
 import net.thevpc.nuts.mon.NChronometer;
 import net.thevpc.nuts.mon.NProgressMonitor;
 import net.thevpc.nuts.mon.NProgressMonitors;
-import net.thevpc.nuts.util.NEnumSet;
+import net.thevpc.nuts.collections.NEnumSet;
 import net.thevpc.nuts.text.NMsg;
 
 /**

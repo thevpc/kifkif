@@ -3,7 +3,7 @@ import net.thevpc.kifkif.*;
 import net.thevpc.kifkif.swing.export.TextExportSupport;
 import net.thevpc.kifkif.swing.export.ExportException;
 import net.thevpc.nuts.Nuts;
-import net.thevpc.nuts.util.NEnumSet;
+import net.thevpc.nuts.collections.NEnumSet;
 
 import java.io.IOException;
 import java.io.File;
