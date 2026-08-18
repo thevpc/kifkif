@@ -7,7 +7,6 @@ import net.thevpc.kifkif.stamp.DefaultFilestamp;
 import net.thevpc.nuts.io.NOut;
 import net.thevpc.nuts.mon.NChronometer;
 import net.thevpc.nuts.mon.NProgressMonitor;
-import net.thevpc.nuts.mon.NProgressMonitors;
 import net.thevpc.nuts.collections.NEnumSet;
 import net.thevpc.nuts.text.NMsg;
 
@@ -61,14 +60,12 @@ public class KifKif implements Serializable, Cloneable {
     private transient SearchStatistics tempStatistics = new SearchStatistics();
 
     private SearchData searchData;
-    private NProgressMonitors mons;
 
     /**
      * Simple Constructor
      * No initialization done.
      */
     public KifKif() {
-        this.mons = NProgressMonitors.of();
     }
 
     /**
@@ -390,7 +387,7 @@ public class KifKif implements Serializable, Cloneable {
      * @return list of duplicates
      */
     public SearchData findDuplicates(NProgressMonitor taskMonitor) {
-        taskMonitor = NProgressMonitors.of().of(taskMonitor);
+        taskMonitor = NProgressMonitor.of(taskMonitor);
         tempFileDuplicatesMap = new Hashtable<Filestamp, DuplicateList>();
         tempFileToStampMap = new Hashtable<File, Filestamp>();
         tempFolderDuplicatesMap = new Hashtable<Filestamp, DuplicateList>();

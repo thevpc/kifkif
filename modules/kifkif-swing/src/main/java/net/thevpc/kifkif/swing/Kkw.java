@@ -49,7 +49,7 @@ import net.thevpc.common.swing.prs.ComponentResourcesUpdater;
 import net.thevpc.common.swing.prs.PRSManager;
 import net.thevpc.nuts.app.NApp;
 import net.thevpc.nuts.core.NSession;
-import net.thevpc.nuts.mon.NProgressMonitors;
+import net.thevpc.nuts.mon.NProgressMonitor;
 import net.thevpc.nuts.collections.NEnumSet;
 import net.thevpc.swing.plaf.UIPlafManager;
 
@@ -848,7 +848,7 @@ public class Kkw implements ResourceSetHolder {
         setProcessing(true);
         try {
             resultTree.clear();
-            SearchData searchData = kifKif.findDuplicates(NProgressMonitors.of().of(statusbar));
+            SearchData searchData = kifKif.findDuplicates(NProgressMonitor.of(statusbar));
             if (getConfiguration().getBoolean(KkwOptionDialog.OPTION_AUTO_MARK_FILES_TO_DELETE, false)) {
                 searchData.setSelectedDuplicatesAuto();
             }

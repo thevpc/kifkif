@@ -16,7 +16,6 @@ import net.thevpc.nuts.cmdline.NArg;
 import net.thevpc.nuts.cmdline.NCmdLine;
 import net.thevpc.nuts.cmdline.NCmdLineRunner;
 import net.thevpc.nuts.mon.NProgressMonitor;
-import net.thevpc.nuts.mon.NProgressMonitors;
 import net.thevpc.nuts.util.NIllegalArgumentException;
 import net.thevpc.nuts.util.NLiteral;
 import net.thevpc.nuts.text.NMsg;
@@ -236,25 +235,24 @@ public final class Kkc  {
     }
 
     private NProgressMonitor createMon(String value) {
-        NProgressMonitors m = NProgressMonitors.of();
 
         if (value == null || value.isEmpty()) {
-            return m.ofSilent();
+            return NProgressMonitor.ofSilent();
         } else if (NLiteral.of(value).isBoolean()) {
             return NLiteral.of(value).asBoolean().get() ?
-                    m.ofLogger(500) : m.ofSilent();
+                    NProgressMonitor.ofLogger(500) : NProgressMonitor.ofSilent();
         } else if (value.equals("always")) {
-            return m.ofLogger();
+            return NProgressMonitor.ofLogger();
         } else if (value.equals("fast")) {
-            return m.ofLogger(300);
+            return NProgressMonitor.ofLogger(300);
         } else if (value.equals("medium")) {
-            return m.ofLogger(1000);
+            return NProgressMonitor.ofLogger(1000);
         } else if (value.equals("slow")) {
-            return m.ofLogger(6000);
+            return NProgressMonitor.ofLogger(6000);
         } else if (value.equals("never")) {
-            return m.ofSilent();
+            return NProgressMonitor.ofSilent();
         } else if (value.matches("\\d{1,6}")) {
-            return m.ofLogger(Integer.parseInt(value));
+            return NProgressMonitor.ofLogger(Integer.parseInt(value));
         } else {
             throw new NIllegalArgumentException( NMsg.ofC("Unknown monitor %s", value));
         }
