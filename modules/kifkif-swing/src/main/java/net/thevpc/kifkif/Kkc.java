@@ -9,12 +9,12 @@ import net.thevpc.kifkif.swing.export.ExportSupport;
 import net.thevpc.kifkif.swing.export.TextExportSupport;
 import net.thevpc.kifkif.swing.Kkw;
 import net.thevpc.common.prs.messageset.MessageSet;
+import net.thevpc.nuts.app.NAppComplete;
 import net.thevpc.nuts.app.NApplication;
 import net.thevpc.nuts.app.NApp;
 import net.thevpc.nuts.app.NAppRun;
 import net.thevpc.nuts.cmdline.NArg;
 import net.thevpc.nuts.cmdline.NCmdLine;
-import net.thevpc.nuts.cmdline.NCmdLineRunner;
 import net.thevpc.nuts.mon.NProgressMonitor;
 import net.thevpc.nuts.util.NIllegalArgumentException;
 import net.thevpc.nuts.util.NLiteral;
@@ -28,6 +28,7 @@ import net.thevpc.nuts.text.NMsg;
  */
 @NApp
 public final class Kkc  {
+    Options options = new Options();
     public Kkc() {
 
     }
@@ -36,192 +37,85 @@ public final class Kkc  {
         NApplication.builder(args).run();
     }
 
+    private NCmdLine parseCmdLine(){
+        NCmdLine cmdLine = NApplication.of().cmdLine();
+        cmdLine.matcher()
+                .when("-c","--console").asFlag(a->options.console = a.booleanValue())
+                .when("-i","--ignore-case").asFlag(a->options.insensitive = a.booleanValue())
+                .when("-o","--output").asEntry(a->options.file=(a.stringValue()))
+                .when("--fc","--file-content").asEntry(a->processFlag(a, FileMode.FILE_CONTENT))
+                .when("--dc","--dir-content").asEntry(a->processFlag(a, FileMode.FOLDER_CONTENT))
+                .when("--fh","--file-checksum").asEntry(a->processFlag(a, FileMode.FILE_STAMP))
+                .when("--dh","--dir-checksum").asEntry(a->processFlag(a, FileMode.FOLDER_STAMP))
+                .when("--ft","--file-time").asEntry(a->processFlag(a, FileMode.FILE_TIME))
+                .when("--dt","--dir-time").asEntry(a->processFlag(a, FileMode.FOLDER_TIME))
+                .when("--fs","--file-size").asEntry(a->processFlag(a, FileMode.FILE_SIZE))
+                .when("--ds","--dir-size").asEntry(a->processFlag(a, FileMode.FOLDER_SIZE))
+                .when("--fn","--file-name").asEntry(a->processFlag(a, FileMode.FILE_NAME))
+                .when("--dn","--dir-name").asEntry(a->processFlag(a, FileMode.FOLDER_NAME))
+                .when("--include").asEntry(a-> options.includedFileSets.add(a.stringValue()))
+                .when("--exclude").asEntry(a-> options.excludedFileSets.add(a.stringValue()))
+                .when("-1","--default-1").asTrueFlag(a->{
+                    options.diffFileOption.add(FileMode.FILE_NAME);
+                    options.diffFileOption.add(FileMode.FILE_SIZE);
+                    options.diffFileOption.add(FileMode.FILE_CONTENT);
+                    options.diffFileOption.add(FileMode.FOLDER_NAME);
+                    options.diffFileOption.add(FileMode.FOLDER_SIZE);
+                    options.diffFileOption.add(FileMode.FOLDER_CONTENT);
+                })
+                .when("-2","--default-2").asTrueFlag(a->{
+                    options.diffFileOption.add(FileMode.FILE_NAME);
+                    options.diffFileOption.add(FileMode.FILE_SIZE);
+                    options.diffFileOption.add(FileMode.FILE_STAMP);
+                    options.diffFileOption.add(FileMode.FOLDER_NAME);
+                    options.diffFileOption.add(FileMode.FOLDER_SIZE);
+                    options.diffFileOption.add(FileMode.FOLDER_STAMP);
+                })
+                .whenNonOption().asArg(a->options.includedFileSets.add(a.image()))
+                .withDefaults()
+                .requireAll();
+        return cmdLine;
+    }
+
+    @NAppComplete
+    public void complete() {
+        parseCmdLine().printCompleteResult();
+    }
     @NAppRun
     public void run() {
-        NApplication.of().runCmdLine(new NCmdLineRunner() {
-            Options options = new Options();
-
-            @Override
-            public boolean next(NArg arg, NCmdLine cmdLine) {
-                if(arg.isOption()){
-                    switch (arg.key()) {
-                        case "-c":
-                        case "--console": {
-                            NArg a = cmdLine.nextFlag().get();
-                            if (a.isUncommented()) {
-                                options.console = a.getBooleanValue().get();
-                            }
-                            return true;
-                        }
-                        case "-o":
-                        case "--output": {
-                            NArg a = cmdLine.nextEntry().get();
-                            if (a.isUncommented()) {
-                                options.file=(a.getStringValue().get());
-                            }
-                            return true;
-                        }
-                        case "-i":
-                        case "--ignore-case": {
-                            NArg a = cmdLine.nextFlag().get();
-                            if (a.isUncommented()) {
-                                options.insensitive = a.getBooleanValue().get();
-                            }
-                            return true;
-                        }
-                        case "-m":
-                        case "--monitor": {
-                            NArg a = cmdLine.nextEntry().get();
-                            if (a.isUncommented()) {
-                                options.monitor=a.getStringValue().get();
-                            }
-                            return true;
-                        }
-                        case "--fc":
-                        case "--file-content": {
-                            processFlag(cmdLine, FileMode.FILE_CONTENT);
-                            return true;
-                        }
-                        case "--dc":
-                        case "--dir-content": {
-                            processFlag(cmdLine, FileMode.FOLDER_CONTENT);
-                            return true;
-                        }
-                        case "--fh":
-                        case "--file-checksum": {
-                            processFlag(cmdLine, FileMode.FILE_STAMP);
-                            return true;
-                        }
-                        case "--dh":
-                        case "--dir-checksum": {
-                            processFlag(cmdLine, FileMode.FOLDER_STAMP);
-                            return true;
-                        }
-                        case "--ft":
-                        case "--file-time": {
-                            processFlag(cmdLine, FileMode.FILE_TIME);
-                            return true;
-                        }
-                        case "--dt":
-                        case "--dir-time": {
-                            processFlag(cmdLine, FileMode.FOLDER_TIME);
-                            return true;
-                        }
-
-                        case "--fs":
-                        case "--file-size": {
-                            processFlag(cmdLine, FileMode.FILE_SIZE);
-                            return true;
-                        }
-                        case "--ds":
-                        case "--dir-size": {
-                            processFlag(cmdLine, FileMode.FOLDER_SIZE);
-                            return true;
-                        }
-
-                        case "--fn":
-                        case "--file-name": {
-                            processFlag(cmdLine, FileMode.FILE_NAME);
-                            return true;
-                        }
-                        case "--dn":
-                        case "--dir-name": {
-                            processFlag(cmdLine, FileMode.FOLDER_NAME);
-                            return true;
-                        }
-                        case "-1":
-                        case "--default-1": {
-                            NArg a = cmdLine.nextFlag().get();
-                            if (a.isUncommented()) {
-                                if (a.getBooleanValue().get()) {
-                                    options.diffFileOption.add(FileMode.FILE_NAME);
-                                    options.diffFileOption.add(FileMode.FILE_SIZE);
-                                    options.diffFileOption.add(FileMode.FILE_CONTENT);
-                                    options.diffFileOption.add(FileMode.FOLDER_NAME);
-                                    options.diffFileOption.add(FileMode.FOLDER_SIZE);
-                                    options.diffFileOption.add(FileMode.FOLDER_CONTENT);
-                                }
-                            }
-
-                            return true;
-                        }
-                        case "-2":
-                        case "--default-2": {
-                            NArg a = cmdLine.nextFlag().get();
-                            if (a.isUncommented()) {
-                                if (a.getBooleanValue().get()) {
-                                    options.diffFileOption.add(FileMode.FILE_NAME);
-                                    options.diffFileOption.add(FileMode.FILE_SIZE);
-                                    options.diffFileOption.add(FileMode.FILE_STAMP);
-                                    options.diffFileOption.add(FileMode.FOLDER_NAME);
-                                    options.diffFileOption.add(FileMode.FOLDER_SIZE);
-                                    options.diffFileOption.add(FileMode.FOLDER_STAMP);
-                                }
-                            }
-                            return true;
-                        }
-                        case "--include": {
-                            NArg a = cmdLine.nextEntry().get();
-                            if (a.isUncommented()) {
-                                options.includedFileSets.add(a.getStringValue().get());
-                            }
-                            return true;
-                        }
-                        case "--exclude": {
-                            NArg a = cmdLine.nextEntry().get();
-                            if (a.isUncommented()) {
-                                options.excludedFileSets.add(a.getStringValue().get());
-                            }
-                            return true;
-                        }
-                    }
-                    return false;
-                }else{
-                    options.includedFileSets.add(cmdLine.nextEntry().get().getStringValue().get());
-                    return true;
-                }
+        NCmdLine cmdLine = parseCmdLine();
+        if (options.console == null || !options.console) {
+            Kkw w = new Kkw();
+            w.showFrame();
+        } else {
+            KifKif kifKif = new KifKif(options.diffFileOption.toArray(new FileMode[0]));
+            kifKif.setCaseInsensitiveNames(options.insensitive);
+            for (String param : options.includedFileSets) {
+                kifKif.addIncludedFileSet(new DefaultFileSet(new File(param)));
             }
-
-
-            private void processFlag(NCmdLine commandline, FileMode flag) {
-                NArg a = commandline.nextFlag().get();
-                if (a.isUncommented()) {
-                    if (a.getBooleanValue().get()) {
-                        options.diffFileOption.add(flag);
-                    } else {
-                        options.diffFileOption.remove(flag);
-                    }
-                }
+            kifKif.addExcludedFiles(options.excludedFileSets.stream().map(File::new).toArray(File[]::new));
+            HashMap<String, Object> properties = new HashMap<String, Object>();
+            properties.put(ExportSupport.FILE_PROPERTY, options.file);
+            MessageSet resources = new MessageSet(LoggerProvider.DEFAULT);
+            resources.addBundle("net.thevpc.kifkif.lang.Kifkif");
+            NProgressMonitor taskMonitor = createMon(options.monitor);
+            SearchData fileDuplicates = kifKif.findDuplicates(taskMonitor);
+            fileDuplicates.setSelectedDuplicatesAuto();
+            TextExportSupport textExportSupport = new TextExportSupport();
+            try {
+                textExportSupport.export(fileDuplicates, options.file == null ? System.out : null, properties);
+            } catch (Exception e) {
+                e.printStackTrace();
             }
+        }
+    }
 
-            @Override
-            public void run(NCmdLine cmdLine) {
-                if (options.console == null || !options.console) {
-                    Kkw w = new Kkw();
-                    w.showFrame();
-                } else {
-                    KifKif kifKif = new KifKif(options.diffFileOption.toArray(new FileMode[0]));
-                    kifKif.setCaseInsensitiveNames(options.insensitive);
-                    for (String param : options.includedFileSets) {
-                        kifKif.addIncludedFileSet(new DefaultFileSet(new File(param)));
-                    }
-                    kifKif.addExcludedFiles(options.excludedFileSets.stream().map(File::new).toArray(File[]::new));
-                    HashMap<String, Object> properties = new HashMap<String, Object>();
-                    properties.put(ExportSupport.FILE_PROPERTY, options.file);
-                    MessageSet resources = new MessageSet(LoggerProvider.DEFAULT);
-                    resources.addBundle("net.thevpc.kifkif.lang.Kifkif");
-                    NProgressMonitor taskMonitor = createMon(options.monitor);
-                    SearchData fileDuplicates = kifKif.findDuplicates(taskMonitor);
-                    fileDuplicates.setSelectedDuplicatesAuto();
-                    TextExportSupport textExportSupport = new TextExportSupport();
-                    try {
-                        textExportSupport.export(fileDuplicates, options.file == null ? System.out : null, properties);
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                    }
-                }
-            }
-        });
+    private void processFlag(NArg a, FileMode flag) {
+        if (a.booleanValue()) {
+            options.diffFileOption.add(flag);
+        } else {
+            options.diffFileOption.remove(flag);
+        }
     }
 
     private static class Options {
