@@ -47,7 +47,7 @@ import net.thevpc.common.prs.log.LoggerProvider;
 import net.thevpc.common.prs.locale.LocaleManager;
 import net.thevpc.common.swing.prs.ComponentResourcesUpdater;
 import net.thevpc.common.swing.prs.PRSManager;
-import net.thevpc.nuts.app.NApp;
+import net.thevpc.nuts.app.NApplication;
 import net.thevpc.nuts.core.NSession;
 import net.thevpc.nuts.mon.NProgressMonitor;
 import net.thevpc.nuts.collections.NEnumSet;
@@ -239,7 +239,7 @@ public class Kkw implements ResourceSetHolder {
         LocaleManager.getInstance().registerLocale(Locale.ITALIAN);
         LocaleManager.getInstance().registerLocale(new Locale("ar"));
         try {
-            configuration = new Configuration(NApp.of().confFolder().resolve("kkw.xml"), true);
+            configuration = new Configuration(NApplication.of().confFolder().resolve("kkw.xml"), true);
         } catch (Exception e) {
             e.printStackTrace();
         }

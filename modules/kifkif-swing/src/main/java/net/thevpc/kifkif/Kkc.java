@@ -9,9 +9,9 @@ import net.thevpc.kifkif.swing.export.ExportSupport;
 import net.thevpc.kifkif.swing.export.TextExportSupport;
 import net.thevpc.kifkif.swing.Kkw;
 import net.thevpc.common.prs.messageset.MessageSet;
+import net.thevpc.nuts.app.NApplication;
 import net.thevpc.nuts.app.NApp;
-import net.thevpc.nuts.app.NAppDefinition;
-import net.thevpc.nuts.app.NAppRunner;
+import net.thevpc.nuts.app.NAppRun;
 import net.thevpc.nuts.cmdline.NArg;
 import net.thevpc.nuts.cmdline.NCmdLine;
 import net.thevpc.nuts.cmdline.NCmdLineRunner;
@@ -26,19 +26,19 @@ import net.thevpc.nuts.text.NMsg;
  * Date: 5 janv. 2005
  * Time: 21:02:48
  */
-@NAppDefinition
+@NApp
 public final class Kkc  {
     public Kkc() {
 
     }
 
     public static void main(String[] args) {
-        NApp.builder(args).run();
+        NApplication.builder(args).run();
     }
 
-    @NAppRunner
+    @NAppRun
     public void run() {
-        NApp.of().runCmdLine(new NCmdLineRunner() {
+        NApplication.of().runCmdLine(new NCmdLineRunner() {
             Options options = new Options();
 
             @Override
